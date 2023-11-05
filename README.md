@@ -40,11 +40,11 @@ Send a POST request to `/apiSchema/set` with the following JSON data in the requ
 #### Response
 Upon a successful request, status `201`, a JSON encoded success message can be found in the response body:
 ```json
-{ success: 'API schema has been set' }
+{ "success": "API schema has been set" }
 ```
 In case of failure, an error message will be sent instead, e.g.,:
 ```json
-{ error: 'Failed to set API schema' }
+{ "error": "Failed to set API schema" }
 ```
 ### Random Exploration
 
@@ -87,7 +87,7 @@ Upon a successful request, status `200`, details on the API call can be found in
             "content-length": "331",
             "date": "Sun, 05 Nov 2023 22:51:39 GMT"
         },
-        "data": [ // Note: feature-service SUT contains a HTML document in case of issues (e.g., status 500)
+        "data": [ // Note: feature-service SUT sends a HTML document here in case of issues (e.g., status 500)
           "ELEARNING_SITE",
           "j03zp",
           "6ddtt",
