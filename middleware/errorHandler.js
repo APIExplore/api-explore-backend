@@ -10,7 +10,7 @@ function forward404 (req, res, next) {
 }
 
 // Error handler
-function errorHandler (err, req, res, next) {
+function handleError (err, req, res, next) {
   // Set locals, providing error in development
   res.locals.message = err.message
   res.locals.error = req.app.get('env') === 'development' ? err : {}
@@ -20,4 +20,4 @@ function errorHandler (err, req, res, next) {
   res.send('Internal Server Error')
 }
 
-module.exports = { forward404, errorHandler }
+module.exports = { forward404, handleError }

@@ -9,34 +9,6 @@
     "http"
   ],
   "paths": {
-    "/products/{productName}/configurations": {
-      "get": {
-        "operationId": "getConfigurationsForProduct",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "productName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "headers": {}
-          }
-        }
-      }
-    },
     "/products/{productName}/configurations/{configurationName}/features": {
       "get": {
         "operationId": "getConfigurationActivedFeatures",
@@ -167,6 +139,34 @@
         "responses": {
           "default": {
             "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/products/{productName}/configurations": {
+      "get": {
+        "operationId": "getConfigurationsForProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "headers": {}
           }
         }
       }
@@ -346,90 +346,6 @@
         }
       }
     },
-    "/products": {
-      "get": {
-        "operationId": "getAllProducts",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "headers": {}
-          }
-        }
-      }
-    },
-    "/products/{productName}": {
-      "get": {
-        "operationId": "getProductByName",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "productName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/Product"
-            },
-            "headers": {}
-          }
-        }
-      },
-      "post": {
-        "operationId": "addProduct",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "productName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "delete": {
-        "operationId": "deleteProductByName",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "productName",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
     "/products/{productName}/features/{featureName}": {
       "post": {
         "operationId": "addFeatureToProduct",
@@ -551,6 +467,90 @@
           }
         }
       }
+    },
+    "/products/{productName}": {
+      "get": {
+        "operationId": "getProductByName",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Product"
+            },
+            "headers": {}
+          }
+        }
+      },
+      "post": {
+        "operationId": "addProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProductByName",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "operationId": "getAllProducts",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "headers": {}
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -596,6 +596,9 @@
     "ProductsConstraintsResource": {
       "type": "object"
     },
+    "ProductsFeaturesResource": {
+      "type": "object"
+    },
     "FeatureConstraint": {
       "type": "object",
       "properties": {
@@ -635,9 +638,6 @@
           }
         }
       }
-    },
-    "ProductsFeaturesResource": {
-      "type": "object"
     }
   }
 }

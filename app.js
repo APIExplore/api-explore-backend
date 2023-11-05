@@ -5,7 +5,7 @@ const debug = require('debug')('API-EXPLORE-BACKEND:server')
 
 const exploreRouter = require('./routes/explore')
 const apiSchemaRouter = require('./routes/apiSchema')
-const errorHandler = require('./middleware/errorHandling')
+const errorHandler = require('./middleware/errorHandler')
 
 const app = express()
 const port = normalizePort(process.env.PORT || '3000')
@@ -16,12 +16,12 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
 // Routes
-app.use('/explore', exploreRouter)
 app.use('/apischema', apiSchemaRouter)
+app.use('/explore', exploreRouter)
 
 // Error handling middleware
 app.use(errorHandler.forward404)
-app.use(errorHandler.errorHandler)
+app.use(errorHandler.handleError)
 
 // Create HTTP server
 const server = http.createServer(app)
