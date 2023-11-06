@@ -5,58 +5,66 @@ const { readApiSchema } = require('../utils/apiSchemaUtils')
 // Assign random values to endpoint parameters (currently just strings and integers)
 function buildApiCalls (callSequence) {
   const apiCalls = []
+  const apiSchema = readApiSchema()
 
   try {
-    const apiSchema = readApiSchema()
     const address = apiSchema.schemes[0] + '://' + apiSchema.host
-    // Randomize call path parameters
-    for (const call of callSequence) {
-      // Extract parameters field from schema
-      const method = apiSchema.paths[call.path][call.method]
-      const params = method.parameters.map(param => ({
-        name: param.name,
-        type: param.type
-      }))
 
-      apiCalls.push({
-        operationId: method.operationId,
-        address,
-        method: call.method,
-        path: randomizePathParameters(call.path, params),
-        parameters: params
-      })
+    for (const call of callSequence) {
+      const path = call.path
+      const method = call.method
+      const operation = apiSchema.paths[path][method]
+
+      if (operation) {
+        const params = operation.parameters.map((param) => ({
+          type: param.type,
+          name: param.name,
+          value: generateRandomValue(param.type)
+        }))
+
+        apiCalls.push({
+          url: address + assignPathParameters(path, params),
+          operationId: operation.operationId,
+          method,
+          path,
+          parameters: params
+        })
+      }
     }
 
     return apiCalls
   } catch (error) {
+    console.error(' - Error building API calls: ', error.message)
     return null
   }
 }
 
 // Send call sequence to SUT
 async function sendApiCall (apiCall) {
-  const url = apiCall.address + apiCall.path
   try {
     // Get formatted timestamp
     apiCall.date = getDate()
 
     // Call the SUT
-    const response = await axios[apiCall.method](url)
+    const response = await axios[apiCall.method](apiCall.url)
 
-    const responseData = {
+    console.error(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
+    apiCall.response = {
       status: response.status,
       headers: response.headers,
       data: response.data
     }
 
-    console.error(` - Success: ${apiCall.operationId} ${apiCall.method} '${url}' ${response.status}`)
-    apiCall.response = responseData
-
     return apiCall
   } catch (error) {
-    console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${url}' ${error.response.status}`)
+    console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${error.response.status}`)
     if (error.response) {
-      apiCall.response = { status: error.response.status, headers: error.response.headers, data: error.response.data }
+      apiCall.response = {
+        status: error.response.status,
+        headers: error.response.headers,
+        data: error.response.data
+      }
+
       return apiCall
     }
     apiCall.error = error
@@ -66,9 +74,9 @@ async function sendApiCall (apiCall) {
 
 // Helper functions
 
-function randomizePathParameters (path, parameters) {
+function assignPathParameters (path, parameters) {
   for (const param of parameters) {
-    path = path.replace(`{${param.name}}`, generateRandomValue(param.type))
+    path = path.replace(`{${param.name}}`, param.value)
   }
   return path
 }

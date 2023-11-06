@@ -8,7 +8,7 @@ function readApiSchema () {
     const schemaData = fs.readFileSync(filePath, 'utf8')
     return JSON.parse(schemaData)
   } catch (error) {
-    console.error(' - Error reading API schema')
+    console.error(' - Error reading API schema: ', error.message)
     return null
   }
 }

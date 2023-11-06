@@ -13,7 +13,8 @@ const callSequenceSchema = {
             type: 'string'
           },
           method: {
-            type: 'string'
+            type: 'string',
+            enum: ['get', 'post', 'delete', 'put']
           }
         },
         required: ['path', 'method']
@@ -26,7 +27,13 @@ const callSequenceSchema = {
 const validate = ajv.compile(callSequenceSchema)
 
 function validateCallSequence (callSequence) {
-  return validate(callSequence)
+  if (validate(callSequence)) {
+    return true
+  }
+
+  console.error(' - Invalid API call sequence')
+  console.error(ajv.errorsText(validate.errors))
+  return false
 }
 
 module.exports = validateCallSequence

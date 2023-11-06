@@ -35,12 +35,26 @@ You can set an imported API schema by sending a POST request to `/apiSchema/set`
 
 #### Request
 
-Send a POST request to `/apiSchema/set` with the following JSON data in the request body:
+Send a POST request to `/apiSchema/set` with a multipart/form-data payload containing a single file with the field name file. The server expects the uploaded file to contain the API schema in a JSON format.
 
 #### Response
-Upon a successful request, status `201`, a JSON encoded success message can be found in the response body:
+
+Upon a successful request, status `201`, all defined operations can be found in the response body:
 ```json
-{ "success": "API schema has been set" }
+{
+  "/products/{productName}": {
+    "get": {
+      "operationId": "getProductByName"
+    },
+    "post": {
+      "operationId": "addProduct"
+    },
+    "delete": {
+      "operationId": "deleteProductByName"
+    }
+  },
+  ...
+}
 ```
 In case of failure, an error message will be sent instead, e.g.,:
 ```json
@@ -57,8 +71,10 @@ Send a POST request to `/explore/random` with  JSON data in the request body fol
 ```json
 {
   "callSequence": [
-    { "path": "/products/{productName}", "method": "get" },
-    { "path": "/products/{productName}/configurations/{configurationName}", "method": "post" },
+    {
+      "path": "/products/{productName}/features",
+      "method": "get"
+    },
     ...
   ]
 }
@@ -70,27 +86,32 @@ Upon a successful request, status `200`, details on the API call can be found in
 {
   "callSequence": [
     {
-      "operationId": "getAllProducts",
-      "address": "http://localhost:8080",
+      "url": "http://localhost:8080/products/1rjzqj/features",
+      "operationId": "getFeaturesForProduct",
       "method": "get",
-      "path": "/products",
-      "parameters": [],
-      "date": "Sun, 5 Nov 2023 22:51:40 GMT",
+      "path": "/products/{productName}/features",
+      "parameters": [
+        {
+          "type": "string",
+          "name": "productName",
+          "value": "1rjzqj"
+        }
+      ],
+      "date": "Mon, 6 Nov 2023 23:16:47 GMT",
       "response": {
-        "status": 200,
+        "status": 500,
         "headers": {
-            "access-control-allow-origin": "*",
-            "access-control-allow-methods": "POST, PUT, GET, OPTIONS, DELETE",
-            "access-control-allow-headers": "x-requested-with",
-            "access-control-max-age": "3600",
-            "content-type": "application/json",
-            "content-length": "331",
-            "date": "Sun, 05 Nov 2023 22:51:39 GMT"
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "POST, PUT, GET, OPTIONS, DELETE",
+          "access-control-allow-headers": "x-requested-with",
+          "access-control-max-age": "3600",
+          "content-type": "text/html;charset=utf-8",
+          "content-language": "en",
+          "content-length": "6941",
+          "date": "Mon, 06 Nov 2023 23:16:47 GMT",
+          "connection": "close"
         },
-        "data": [ // Note: feature-service SUT sends a HTML document here in case of issues (e.g., status 500)
-          "ELEARNING_SITE",
-          "j03zp",
-          "6ddtt",
+        "data": [
           ...
         ]
       }

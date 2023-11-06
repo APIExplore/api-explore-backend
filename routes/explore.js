@@ -13,15 +13,13 @@ router.post('/random', async function (req, res, next) {
 
   // Ensure the request body contains necessary fields
   if (!validateCallSequence(req.body)) {
-    console.error(' - Invalid request data')
-    return res.status(400).json({ error: 'Invalid request data' })
+    return res.status(400).json({ error: 'Invalid API call sequence in request data' })
   }
 
   // Randomize the endpoint parameters and prepare necessary data to make calls
   const apiCalls = buildApiCalls(req.body.callSequence)
   if (!apiCalls) {
-    console.error(' - Error parsing API schema')
-    return res.status(500).json({ error: 'Error parsing API schema' })
+    return res.status(400).json({ error: 'Error building API calls' })
   }
 
   // Send calls to SUT

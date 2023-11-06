@@ -17,7 +17,8 @@ function handleError (err, req, res, next) {
 
   // Send error message
   res.status(err.status || 500)
-  res.send('Internal Server Error')
+  console.error(` - ${err}`)
+  res.send('Error handling the request')
 }
 
 module.exports = { forward404, handleError }
