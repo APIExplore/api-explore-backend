@@ -99,8 +99,8 @@ Upon a successful request, status `200`, details on the API call can be found in
       ],
       "requestBody": {},
       "date": "Wed, 8 Nov 2023 10:57:23:752",
-      "status": 200,
       "response": {
+        "status": 200,
         "date": "Wed, 8 Nov 2023 10:57:23:760",
         "data": []
       }
