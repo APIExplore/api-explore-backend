@@ -1,6 +1,9 @@
 const axios = require('axios')
+const { Server } = require('socket.io')
 
 const { readApiSchema } = require('../utils/apiSchemaUtils')
+
+const io = new Server(process.env.SOCKET || '3001')
 
 // Assign random values to endpoint parameters (currently just strings and integers)
 function buildApiCalls (callSequence) {
@@ -26,8 +29,9 @@ function buildApiCalls (callSequence) {
           url: address + assignPathParameters(path, params),
           operationId: operation.operationId,
           method,
-          path,
-          parameters: params
+          endpoint: path,
+          parameters: params,
+          requestBody: {}
         })
       }
     }
@@ -40,20 +44,20 @@ function buildApiCalls (callSequence) {
 }
 
 // Send call sequence to SUT
-async function sendApiCall (apiCall) {
+async function sendApiCallToSut (apiCall) {
   try {
     // Get formatted timestamp
     apiCall.date = getDate()
 
     // Call the SUT
     const response = await axios[apiCall.method](apiCall.url)
-
-    console.error(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
     apiCall.response = {
       status: response.status,
-      headers: response.headers,
+      date: getDate(),
       data: response.data
     }
+
+    console.log(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
 
     return apiCall
   } catch (error) {
@@ -61,7 +65,7 @@ async function sendApiCall (apiCall) {
     if (error.response) {
       apiCall.response = {
         status: error.response.status,
-        headers: error.response.headers,
+        date: getDate(),
         data: error.response.data
       }
 
@@ -70,6 +74,12 @@ async function sendApiCall (apiCall) {
     apiCall.error = error
     return apiCall
   }
+}
+
+function sendApiCallOverSocket (apiCall) {
+  io.on('connection', (socket) => {
+    socket.emit('apiCall', apiCall)
+  })
 }
 
 // Helper functions
@@ -101,15 +111,16 @@ function getDate () {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ]
 
-  const dayOfWeek = daysOfWeek[timestamp.getUTCDay()]
-  const day = timestamp.getUTCDate()
-  const month = months[timestamp.getUTCMonth()]
-  const year = timestamp.getUTCFullYear()
-  const hours = timestamp.getUTCHours()
-  const minutes = timestamp.getUTCMinutes()
-  const seconds = timestamp.getUTCSeconds()
+  const dayOfWeek = daysOfWeek[timestamp.getDay()]
+  const day = timestamp.getDate()
+  const month = months[timestamp.getMonth()]
+  const year = timestamp.getFullYear()
+  const hours = timestamp.getHours()
+  const minutes = timestamp.getMinutes()
+  const seconds = timestamp.getSeconds()
+  const milliseconds = timestamp.getMilliseconds()
 
-  return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds} GMT`
+  return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}:${milliseconds}`
 }
 
-module.exports = { buildApiCalls, sendApiCall }
+module.exports = { buildApiCalls, sendApiCallToSut, sendApiCallOverSocket }

@@ -6,7 +6,7 @@ const express = require('express')
 const router = express.Router()
 
 const validateCallSequence = require('../utils/validators/callSequenceValidator')
-const { buildApiCalls, sendApiCall } = require('../controllers/exploreController')
+const { buildApiCalls, sendApiCallToSut, sendApiCallOverSocket } = require('../controllers/exploreController')
 
 router.post('/random', async function (req, res, next) {
   console.log('Random exploration started...')
@@ -25,12 +25,13 @@ router.post('/random', async function (req, res, next) {
   // Send calls to SUT
   const responseObj = { callSequence: [] }
   for (const apiCall of apiCalls) {
-    responseObj.callSequence.push(await sendApiCall(apiCall))
+    const response = await sendApiCallToSut(apiCall)
+    sendApiCallOverSocket(response)
+    responseObj.callSequence.push(response)
   }
 
   // TODO:
   //  - Upload response data to Firebase through utility functions
-  //  - Setup socket for communication with frontend?
   //  - Send final response indicating success/failure
 
   return res.status(200).json(responseObj) // Placeholder

@@ -81,41 +81,39 @@ Send a POST request to `/explore/random` with  JSON data in the request body fol
 ```
 #### Response
 Currently all API call data is sent in the response body (to be changed later), used for testing on Postman.
-Upon a successful request, status `200`, details on the API call can be found in the request body (Not formatted nicely at the moment), e.g.,:
+Upon a successful request, status `200`, details on the API call can be found in the request body, e.g.,:
 ```json
 {
   "callSequence": [
     {
-      "url": "http://localhost:8080/products/1rjzqj/features",
-      "operationId": "getFeaturesForProduct",
+      "url": "http://localhost:8080/products/gx8h9/configurations",
+      "operationId": "getConfigurationsForProduct",
       "method": "get",
-      "path": "/products/{productName}/features",
+      "endpoint": "/products/{productName}/configurations",
       "parameters": [
         {
           "type": "string",
           "name": "productName",
-          "value": "1rjzqj"
+          "value": "gx8h9"
         }
       ],
-      "date": "Mon, 6 Nov 2023 23:16:47 GMT",
+      "requestBody": {},
+      "date": "Wed, 8 Nov 2023 10:57:23:752",
+      "status": 200,
       "response": {
-        "status": 500,
-        "headers": {
-          "access-control-allow-origin": "*",
-          "access-control-allow-methods": "POST, PUT, GET, OPTIONS, DELETE",
-          "access-control-allow-headers": "x-requested-with",
-          "access-control-max-age": "3600",
-          "content-type": "text/html;charset=utf-8",
-          "content-language": "en",
-          "content-length": "6941",
-          "date": "Mon, 06 Nov 2023 23:16:47 GMT",
-          "connection": "close"
-        },
-        "data": [
-          ...
-        ]
+        "date": "Wed, 8 Nov 2023 10:57:23:760",
+        "data": []
       }
-    }
+    },
+    ...
   ]
 }
+```
+You can also receive individual API calls as the they are being made and a response is received from the SUT through `Socket.io` ('https://socket.io/').
+The socket is setup on the backend like this:
+```javascript
+const io = new Server(process.env.SOCKET || '3001')
+io.on('connection', (socket) => {
+  socket.emit('apiCall', apiCall)
+})
 ```
