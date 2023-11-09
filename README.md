@@ -118,10 +118,10 @@ socket.emit('apiCall', apiCall)
 ```
 The socket is event-based and will trigger it's corresponding function each time a call is emitted. Example of logging each call (frontend):
 ```javascript
-const socket = io('http://localhost:3001');
+const socket = io('http://localhost:3001')
 socket.on('apiCall', (apiCall) => {
-  console.log(apiCall);
-});
+  console.log(apiCall)
+})
 ```
 The JSON structure of each API call received over the socket would be:
 ```json
