@@ -54,23 +54,36 @@ async function sendApiCallToSut (apiCall) {
 
     // Call the SUT
     const response = await axios[apiCall.method](apiCall.url)
+    const responseDate = getDate()
     apiCall.response = {
       status: response.status,
-      date: getDate(),
+      date: responseDate,
       data: response.data
     }
+
+    // Calculate call duration
+    const start = new Date(apiCall.date)
+    const end = new Date(apiCall.response.date)
+    apiCall.duration = end - start
 
     console.log(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
 
     return apiCall
   } catch (error) {
+    const responseDate = getDate()
+
     console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${error.response.status}`)
+
     if (error.response) {
       apiCall.response = {
         status: error.response.status,
-        date: getDate(),
+        date: responseDate,
         data: error.response.data
       }
+
+      const start = new Date(apiCall.date)
+      const end = new Date(apiCall.response.date)
+      apiCall.duration = end - start
 
       return apiCall
     }

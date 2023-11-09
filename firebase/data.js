@@ -17,6 +17,7 @@ async function addApiCallSequence (collectionName, apiCalls) {
       parameters: apiCall.parameters,
       requestBody: apiCall.requestBody,
       date: apiCall.date,
+      duration: apiCall.duration,
       response: apiCall.response
     }
     await addApiCall(collectionName, documentName, data)
