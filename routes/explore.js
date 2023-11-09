@@ -7,6 +7,7 @@ const router = express.Router()
 
 const validateCallSequence = require('../utils/validators/callSequenceValidator')
 const { buildApiCalls, sendApiCallToSut, sendApiCallOverSocket } = require('../controllers/exploreController')
+const { addApiCallSequence: dbAddSequence } = require('../firebase/data')
 
 router.post('/random', async function (req, res, next) {
   console.log('Random exploration started...')
@@ -30,11 +31,11 @@ router.post('/random', async function (req, res, next) {
     responseObj.callSequence.push(response)
   }
 
-  // TODO:
-  //  - Upload response data to Firebase through utility functions
-  //  - Send final response indicating success/failure
+  // Add API call sequence to Firebase (async)
+  const collectionName = 'test_api_calls' // Temp name for testing
+  dbAddSequence(collectionName, responseObj.callSequence)
 
-  return res.status(200).json(responseObj) // Placeholder
+  return res.status(201).json(responseObj)
 })
 
 module.exports = router

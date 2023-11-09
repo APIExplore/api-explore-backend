@@ -4,6 +4,9 @@ const { Server } = require('socket.io')
 const { readApiSchema } = require('../utils/apiSchemaUtils')
 
 const io = new Server(process.env.SOCKET || '3001')
+io.on('connection', (socket) => {
+  console.log('API call socket is on...')
+})
 
 // Assign random values to endpoint parameters (currently just strings and integers)
 function buildApiCalls (callSequence) {
@@ -77,9 +80,7 @@ async function sendApiCallToSut (apiCall) {
 }
 
 function sendApiCallOverSocket (apiCall) {
-  io.on('connection', (socket) => {
-    socket.emit('apiCall', apiCall)
-  })
+  io.emit('apiCall', apiCall)
 }
 
 // Helper functions
