@@ -27,7 +27,51 @@ Send a POST request to `/apiSchema/fetch` with the following JSON data in the re
 }
 ```
 #### Response
-Upon a successful request, status `201`, the API schema (JSON) can be found in the response body.
+Upon a successful request, status `201`, all defined operations can be found in the response body (`note:` a response may or may not include parameters depending on operation):
+```json
+{
+  "/products/{productName}": {
+    "get": {
+      "operationId": "getProductByName",
+      "parameters": [
+        {
+          "name": "productName",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "post": {
+      "operationId": "addProduct",
+      "parameters": [
+        {
+          "name": "productName",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    },
+    "delete": {
+      "operationId": "deleteProductByName",
+      "parameters": [
+        {
+          "name": "productName",
+          "in": "path",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    }
+  },
+  ...
+}
+```
+In case of failure, an error message will be sent instead, e.g.,:
+```json
+{ "error": "Failed to set API schema" }
+```
 
 ### Set API Schema
 
@@ -38,28 +82,8 @@ You can set an imported API schema by sending a POST request to `/apiSchema/set`
 Send a POST request to `/apiSchema/set` with a multipart/form-data payload containing a single file with the field name file. The server expects the uploaded file to contain the API schema in a JSON format.
 
 #### Response
+[Same as Fetch API Schema](#Fetch-API-Schema/response)
 
-Upon a successful request, status `201`, all defined operations can be found in the response body:
-```json
-{
-  "/products/{productName}": {
-    "get": {
-      "operationId": "getProductByName"
-    },
-    "post": {
-      "operationId": "addProduct"
-    },
-    "delete": {
-      "operationId": "deleteProductByName"
-    }
-  },
-  ...
-}
-```
-In case of failure, an error message will be sent instead, e.g.,:
-```json
-{ "error": "Failed to set API schema" }
-```
 ### Random Exploration
 
 You can initiate random exploration by sending a POST request to `/explore/random`, after setting or fetching an API schema and providing a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase (currently in the `test_api_calls` collection)
