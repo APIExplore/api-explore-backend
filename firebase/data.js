@@ -38,6 +38,31 @@ async function addApiCall (collectionName, documentName, data) {
   }
 }
 
+async function getApiCalls(collectionName) {
+  const collectionRef = db.collection(collectionName);
+
+  try {
+    const querySnapshot = await collectionRef.get();
+
+    const apiCalls = [];
+    querySnapshot.forEach((doc) => {
+      const apiCallData = doc.data();
+      apiCalls.push(apiCallData);
+    });
+
+    return apiCalls;
+  } catch (error) {
+    console.error(`Error getting API calls from Firestore:`, error.message);
+    return [];
+  }
+}
+
+// Example usage:
+/*const collectionName = 'api_calls';
+getApiCalls(collectionName).then((apiCalls) => {
+  console.log('Retrieved API Calls:', apiCalls);
+});*/
+
 function printProgressBar (total, count) {
   const percentage = Math.round((count / total) * 100)
   process.stdout.clearLine()
@@ -45,4 +70,4 @@ function printProgressBar (total, count) {
   process.stdout.write(` - Progress: [${'#'.repeat(percentage / 10)}${'.'.repeat(10 - percentage / 10)}] ${percentage}%`)
 }
 
-module.exports = { addApiCallSequence }
+module.exports = { addApiCallSequence, getApiCalls }
