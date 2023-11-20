@@ -8,8 +8,12 @@ function getPathsAndMethods (apiSchema) {
 
         for (const method in methods) {
           const operation = methods[method]
-          if (operation && operation.operationId) {
-            result[path][method] = { operationId: operation.operationId }
+          if (operation) {
+            if (operation.operationId) {
+              result[path][method] = { operationId: operation.operationId }
+            } else {
+              result[path][method] = { operationId: path }
+            }
             if (operation.parameters) {
               result[path][method].parameters = operation.parameters
             }

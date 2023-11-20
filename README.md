@@ -11,23 +11,56 @@ Install dependencies by running `yarn install`
 1. Make sure the SUT (e.g., feature-service) is running in the background
 2. Start the application: `node app.js`
 
+## Tested APIs
+
+Hosted locally:
+  - feature-service (https://github.com/EMResearch/EMB/tree/master/jdk_8_maven/cs/rest/original/features-service)
+  - languagetool (https://github.com/EMResearch/EMB/tree/master/jdk_8_maven/cs/rest/original/languagetool)
+
+Online:
+  - disease.sh (https://disease.sh/docs/)
+
 ## Endpoints
 
-### Fetch API Schema
+### Fetch all API Schemas from DB (mocked)
 
-You can fetch the API schema from the SUT by sending a POST request to `/apiSchema/fetch` and providing the address to the schema in the request body. This also saves a local copy on the backend `apiSchema.json` (currently in the `/schemas` directory).
+Fetches the names of all API schemas saved on the database (currently sends the names of three mocked API schemas, can still be fetched via name).
 
 #### Request
 
-Send a POST request to `/apiSchema/fetch` with the following JSON data in the request body:
+Send a GET request to `/apiSchema/fetch`.
 
-```json
-{
-  "address": "http://localhost:8080/swagger.json"
-}
-```
 #### Response
-Upon a successful request, status `201`, all defined operations can be found in the response body (`note:` a response may or may not include parameters depending on operation):
+
+Returns a JSON array of API schema names, e.g.,:
+```json
+[
+  {
+    "name": "feature-service"
+  },
+  {
+    "name": "disease"
+  },
+  {
+    "name": "languagetool"
+  }
+]
+```
+
+### Fetch API Schema by Name from DB (mocked)
+
+Fetches an API schema by name (passed via URL) by sending a GET request to `/apiSchema/fetch/:schemaName`.
+
+#### Request
+
+Send a GET request to `/apiSchema/fetch/:schemaName` (replace :schemaName with actual name). Currently mocked, with three working names:
+ - feature-service
+ - languagetool
+ - disease
+
+#### Response
+
+Upon a successful request, status `200`, all defined operations can be found in the response body (`note:` a response may or may not include parameters depending on operation):
 ```json
 {
   "/products/{productName}": {
@@ -73,16 +106,33 @@ In case of failure, an error message will be sent instead, e.g.,:
 { "error": "Failed to set API schema" }
 ```
 
-### Set API Schema
+### Fetch API Schema by URL and upload to Firebase
+
+You can fetch the API schema from the SUT by sending a POST request to `/apiSchema/fetch` and providing the address to the schema in the request body. This also saves a local copy on the backend `apiSchema.json` (currently in the `/schemas` directory).
+
+#### Request
+
+Send a POST request to `/apiSchema/fetch` with the following JSON data in the request body:
+
+```json
+{
+  "name": "Schema name",
+  "address": "http://localhost:8080/swagger.json"
+}
+```
+#### Response
+Same as [Fetch API Schema by Name from DB (mocked)](#Fetch-API-Schema-by-Name-from-DB-(mocked)/response) with status `201`
+
+### Set API Schema through file upload and and upload to Firebase
 
 You can set an imported API schema by sending a POST request to `/apiSchema/set` and providing the API schema (JSON) in the request body. This  saves a local copy on the backend `apiSchema.json` (currently in the `/schemas` directory).
 
 #### Request
 
-Send a POST request to `/apiSchema/set` with a multipart/form-data payload containing a single file with the field name file. The server expects the uploaded file to contain the API schema in a JSON format.
+Send a POST request to `/apiSchema/set` with a multipart/form-data payload containing a single file with the field name file. `NOTE:` now requires a name field to be provided as well, just append it to the formData object. The server expects the uploaded file to contain the API schema in a JSON format.
 
 #### Response
-[Same as Fetch API Schema](#Fetch-API-Schema/response)
+Same as [Fetch API Schema by Name from DB (mocked)](#Fetch-API-Schema-by-Name-from-DB-(mocked)/response) with status `201`
 
 ### Random Exploration
 
@@ -170,3 +220,34 @@ The JSON structure of each API call received over the socket would be:
   }
 }
 ```
+
+### Exploration
+
+Exporation can be initiated by sending a POST request to `/explore`, after setting or fetching an API schema and providing a set of operations to run in the request body (including parameter values). Once the call sequence has finished, all calls along with response data will be uploaded on Firebase (currently in the `test_api_calls` collection)
+
+#### Request
+
+Send a POST request to `/explore` with  JSON data in the request body following a similar structure to:
+
+```json
+{
+  "callSequence": [
+    {
+      "path": "/products/{productName}",
+      "method": "get",
+      "parameters": [
+        {
+          "type": "string",
+          "in": "path",
+          "name": "productName",
+          "value": "testProduct"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Response
+
+[Random Exploration](#Random-Exploration/response)

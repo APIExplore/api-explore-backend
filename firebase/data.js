@@ -2,6 +2,38 @@ const { v4: generateId } = require('uuid')
 
 const { db } = require('../firebase/config')
 
+// Check if API schema of name exists
+async function apiSchemaExists (name) {
+  const apiSchemasCollectionRef = db.collection('api_schemas')
+
+  try {
+    const query = await apiSchemasCollectionRef.where('name', '==', name).get()
+
+    // Check if any documents match the query
+    return !query.empty
+  } catch (error) {
+    console.error('Error checking if API Schema exists in Firestore:', error)
+    return false
+  }
+}
+
+// Function to create or update an API schema
+async function addApiSchema (apiSchemaId, apiSchema, name) {
+  const apiSchemasCollectionRef = db.collection('api_schemas')
+
+  try {
+    const docRef = apiSchemasCollectionRef.doc(apiSchemaId)
+    await docRef.set({
+      apiSchema,
+      name
+    })
+
+    console.log('API Schema added or updated in Firestore with ID:', apiSchemaId)
+  } catch (error) {
+    console.error('Error adding or updating API Schema in Firestore:', error)
+  }
+}
+
 // Function for uploading a sequence of API calls to Firebase
 async function addApiCallSequence (collectionName, apiCalls) {
   console.log(' - Uploading call sequence to firebase...')
@@ -45,4 +77,4 @@ function printProgressBar (total, count) {
   process.stdout.write(` - Progress: [${'#'.repeat(percentage / 10)}${'.'.repeat(10 - percentage / 10)}] ${percentage}%`)
 }
 
-module.exports = { addApiCallSequence }
+module.exports = { apiSchemaExists, addApiSchema, addApiCallSequence }

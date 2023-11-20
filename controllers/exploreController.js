@@ -1,3 +1,4 @@
+const querystring = require('querystring')
 const axios = require('axios')
 const { Server } = require('socket.io')
 
@@ -8,13 +9,16 @@ io.on('connection', (socket) => {
   console.log('API call socket is on...')
 })
 
-// Assign random values to endpoint parameters (currently just strings and integers)
 function buildApiCalls (callSequence) {
   const apiCalls = []
   const apiSchema = readApiSchema()
 
   try {
-    const address = apiSchema.schemes[0] + '://' + apiSchema.host
+    const basePath = apiSchema.basePath.endsWith('/')
+      ? apiSchema.basePath.slice(0, -1)
+      : apiSchema.basePath
+
+    const address = apiSchema.schemes[0] + '://' + apiSchema.host + basePath
 
     for (const call of callSequence) {
       const path = call.path
@@ -22,19 +26,62 @@ function buildApiCalls (callSequence) {
       const operation = apiSchema.paths[path][method]
 
       if (operation) {
-        const params = operation.parameters.map((param) => ({
-          type: param.type,
-          name: param.name,
-          value: generateRandomValue(param.type)
-        }))
-
+        const params = call.parameters
         apiCalls.push({
           url: address + assignPathParameters(path, params),
-          operationId: operation.operationId,
+          operationId: operation.operationId ? operation.operationId : path,
           method,
           endpoint: path,
           parameters: params,
-          requestBody: {}
+          requestBody: assignRequestBodyParameters(params)
+        })
+      }
+    }
+
+    return apiCalls
+  } catch (error) {
+    console.error(' - Error building API calls: ', error.message)
+    return null
+  }
+}
+
+// Assign random values to endpoint parameters
+function buildApiCallsRandParams (callSequence) {
+  const apiCalls = []
+  const apiSchema = readApiSchema()
+
+  try {
+    const basePath = apiSchema.basePath.endsWith('/')
+      ? apiSchema.basePath.slice(0, -1)
+      : apiSchema.basePath
+
+    const address = apiSchema.schemes[0] + '://' + apiSchema.host + basePath
+
+    for (const call of callSequence) {
+      const path = call.path
+      const method = call.method
+      const operation = apiSchema.paths[path][method]
+
+      if (operation) {
+        let params = []
+        if (operation.parameters) {
+          params = operation.parameters.map((param) => ({
+            type: param.type,
+            in: param.in,
+            name: param.name,
+            value: param.enum
+              ? pickRandomValueFromEnum(param.enum)
+              : generateRandomValue(param.type)
+          }))
+        }
+
+        apiCalls.push({
+          url: address + assignPathParameters(path, params),
+          operationId: operation.operationId ? operation.operationId : path,
+          method,
+          endpoint: path,
+          parameters: params,
+          requestBody: assignRequestBodyParameters(params)
         })
       }
     }
@@ -52,8 +99,25 @@ async function sendApiCallToSut (apiCall) {
     // Get formatted timestamp
     apiCall.date = getDate()
 
+    const axiosConfig = {
+      method: apiCall.method,
+      url: apiCall.url
+    }
+
+    const { formData } = apiCall.requestBody
+
+    // Check if the API call contains formData
+    if (Object.keys(formData).length > 0) {
+      axiosConfig.data = querystring.stringify(formData)
+      axiosConfig.headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    }
+
     // Call the SUT
-    const response = await axios[apiCall.method](apiCall.url)
+    const response = await axios(axiosConfig)
+
+    // Record response data
     const responseDate = getDate()
     apiCall.response = {
       status: response.status,
@@ -71,8 +135,11 @@ async function sendApiCallToSut (apiCall) {
     return apiCall
   } catch (error) {
     const responseDate = getDate()
-
-    console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${error.response.status}`)
+    try {
+      console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${error.response.status}`)
+    } catch (error) {
+      console.error(' - Error: Cannot connect to the SUT, ensure the correct API schema is used')
+    }
 
     if (error.response) {
       apiCall.response = {
@@ -99,10 +166,43 @@ function sendApiCallOverSocket (apiCall) {
 // Helper functions
 
 function assignPathParameters (path, parameters) {
+  let isFirstQuery = true
   for (const param of parameters) {
-    path = path.replace(`{${param.name}}`, param.value)
+    switch (param.in) {
+      case 'path':
+        path = path.replace(`{${param.name}}`, param.value)
+        break
+      case 'query':
+        if (isFirstQuery) {
+          path = `${path}?${param.name}=${param.value}`
+          isFirstQuery = false
+        } else {
+          path = `${path}&${param.name}=${param.value}`
+        }
+        break
+      default:
+        break
+    }
   }
   return path
+}
+
+function assignRequestBodyParameters (parameters) {
+  const formDataParams = {}
+
+  for (const param of parameters) {
+    switch (param.in) {
+      case 'formData':
+        formDataParams[param.name] = param.value
+        break
+      default:
+        break
+    }
+  }
+
+  return {
+    formData: formDataParams
+  }
 }
 
 function generateRandomValue (type) {
@@ -111,9 +211,15 @@ function generateRandomValue (type) {
       return Math.floor(Math.random() * 1000)
     case 'string':
       return (Math.random() + 1).toString(36).substring(7)
+    case 'boolean':
+      return Math.random() < 0.5
     default:
       return null
   }
+}
+
+function pickRandomValueFromEnum (enumValues) {
+  return enumValues[Math.floor(Math.random() * enumValues.length)]
 }
 
 function getDate () {
@@ -137,4 +243,4 @@ function getDate () {
   return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}:${milliseconds}`
 }
 
-module.exports = { buildApiCalls, sendApiCallToSut, sendApiCallOverSocket }
+module.exports = { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket }

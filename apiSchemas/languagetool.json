@@ -7,11 +7,11 @@
   },
   "host": "localhost:8081",
   "schemes": [
-    "http"
+      "http"
   ],
   "basePath": "/v2",
   "produces": [
-    "application/json"
+      "application/json"
   ],
   "consumes": [
     "application/x-www-form-urlencoded"
@@ -110,10 +110,10 @@
                 "software": {
                   "type": "object",
                   "required": [
-                    "name",
-                    "version",
-                    "buildDate",
-                    "apiVersion"
+                      "name",
+                      "version",
+                      "buildDate",
+                      "apiVersion"
                   ],
                   "properties": {
                     "name": {
@@ -146,9 +146,9 @@
                   "type": "object",
                   "description": "The language used for checking the text.",
                   "required": [
-                    "name",
-                    "code",
-                    "detectedLanguage"
+                      "name",
+                      "code",
+                      "detectedLanguage"
                   ],
                   "properties": {
                     "name": {
@@ -163,8 +163,8 @@
                       "type": "object",
                       "description": "The automatically detected text language (might be different from the language actually used for checking).",
                       "required": [
-                        "name",
-                        "code"
+                          "name",
+                          "code"
                       ],
                       "properties": {
                         "name": {
@@ -188,12 +188,12 @@
                   "items": {
                     "type": "object",
                     "required": [
-                      "message",
-                      "offset",
-                      "length",
-                      "replacements",
-                      "context",
-                      "sentence"
+                        "message",
+                        "offset",
+                        "length",
+                        "replacements",
+                        "context",
+                        "sentence"
                     ],
                     "properties": {
                       "message": {
@@ -228,9 +228,9 @@
                       "context": {
                         "type": "object",
                         "required": [
-                          "text",
-                          "offset",
-                          "length"
+                            "text",
+                            "offset",
+                            "length"
                         ],
                         "properties": {
                           "text": {
@@ -254,9 +254,9 @@
                       "rule": {
                         "type": "object",
                         "required": [
-                          "id",
-                          "description",
-                          "category"
+                            "id",
+                            "description",
+                            "category"
                         ],
                         "properties": {
                           "id": {
@@ -323,9 +323,9 @@
               "items": {
                 "type": "object",
                 "required": [
-                  "name",
-                  "code",
-                  "longCode"
+                    "name",
+                    "code",
+                    "longCode"
                 ],
                 "properties": {
                   "name": {
