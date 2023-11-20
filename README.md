@@ -250,4 +250,4 @@ Send a POST request to `/explore` with  JSON data in the request body following 
 
 #### Response
 
-[Random Exploration](#Random-Exploration/response)
+Same as [Random Exploration](#Random-Exploration/response)
