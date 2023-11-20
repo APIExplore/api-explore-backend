@@ -2,6 +2,9 @@ const { v4: generateId } = require('uuid')
 
 const { db } = require('../firebase/config')
 
+//const { addDoc, collection, setDoc, doc } = require('firebase-admin/firestore');
+
+
 // Function for uploading a sequence of API calls to Firebase
 async function addApiCallSequence (collectionName, apiCalls) {
   console.log(' - Uploading call sequence to firebase...')
@@ -24,6 +27,23 @@ async function addApiCallSequence (collectionName, apiCalls) {
     printProgressBar(total, ++count)
   }
   console.log('\n - Call sequence has been uploaded')
+}
+
+// Function to create or update an API schema
+async function addApiSchema(apiSchemaId, apiSchema, name) {
+  const apiSchemasCollectionRef = db.collection('api_schemas');
+
+  try {
+    const docRef = apiSchemasCollectionRef.doc(apiSchemaId);
+    await docRef.set({
+      apiSchema: apiSchema, 
+      name: name 
+    });
+
+    console.log('API Schema added or updated in Firestore with ID:', apiSchemaId);
+  } catch (error) {
+    console.error('Error adding or updating API Schema in Firestore:', error);
+  }
 }
 
 // Function to add an API call to the Firestore database
