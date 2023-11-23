@@ -84,63 +84,43 @@ async function addApiCall (collectionName, documentName, data) {
   }
 }
 
-// Function to get all the apiScehmas
-async function getAllApiSchemas(schemaCollectionName) {
-  const apiSchemasCollectionRef = db.collection(schemaCollectionName);
-
-  try {
-    const querySnapshot = await apiSchemasCollectionRef.get();
-    const apiSchemas = [];
-
-    querySnapshot.forEach((doc) => {
-      const apiSchemaData = doc.data();
-      apiSchemas.push(apiSchemaData);
-    });
-
-    return apiSchemas;
-  } catch (error) {
-    console.error(`Error getting API schemas from ${collectionName} in Firestore:`, error);
-    return [];
-  }
-}
-
-// Function to get a specific API schema by name
-async function getApiSchemaByName(schemaCollectionName, schemaDocumentName) {
-  const collectionRef = db.collection(schemaCollectionName);
-
-  try {
-    const docSnapshot = await collectionRef.doc(schemaDocumentName).get();
-
-    if (docSnapshot.exists) {
-      const apiSchema = docSnapshot.data();
-      return apiSchema;
-    } else {
-      console.log('No matching schema found.');
-      return null;
-    }
-  } catch (error) {
-    console.error('Error getting API schema from Firestore:', error);
-    return null;
-  }
-}
-
-// Function to get all the apiCalls
-async function getApiCalls(collectionName) {
+// Function to get all the sequences, apiScehmas, or apiCalls
+async function getAllApiInfo(collectionName) {
   const collectionRef = db.collection(collectionName);
 
   try {
     const querySnapshot = await collectionRef.get();
+    const apiInfo = [];
 
-    const apiCalls = [];
     querySnapshot.forEach((doc) => {
-      const apiCallData = doc.data();
-      apiCalls.push(apiCallData);
+      const apiData = doc.data();
+      apiInfo.push(apiData);
     });
 
-    return apiCalls;
+    return apiInfo;
   } catch (error) {
-    console.error(`Error getting API calls from Firestore:`, error.message);
+    console.error(`Error getting from ${collectionName} in Firestore:`, error);
     return [];
+  }
+}
+
+// Function to get a specific sequence, apiCall, or schema
+async function getApiInfoByName(collectionName, documentName) {
+  const collectionRef = db.collection(collectionName);
+
+  try {
+    const docSnapshot = await collectionRef.doc(documentName).get();
+
+    if (docSnapshot.exists) {
+      const apiData = docSnapshot.data();
+      return apiData;
+    } else {
+      console.log('No matching information found.');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting API information from Firestore:', error);
+    return null;
   }
 }
 
@@ -151,4 +131,4 @@ function printProgressBar (total, count) {
   process.stdout.write(` - Progress: [${'#'.repeat(percentage / 10)}${'.'.repeat(10 - percentage / 10)}] ${percentage}%`)
 }
 
-module.exports = { getAllApiSchemas, getApiSchemaByName, createCollection, uploadApiCallSequence, addApiCallSequence, addApiSchema, getApiCalls }
+module.exports = { getAllApiInfo, getApiInfoByName, createCollection, uploadApiCallSequence, addApiCallSequence, addApiSchema }
