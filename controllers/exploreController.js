@@ -9,7 +9,8 @@ io.on('connection', (socket) => {
   console.log('API call socket is on...')
 })
 
-function buildApiCalls (callSequence) {
+// Common function for building API calls
+function buildApiCallsCommon (callSequence, useRandomParams) {
   const apiCalls = []
   const apiSchema = readApiSchema()
 
@@ -24,55 +25,21 @@ function buildApiCalls (callSequence) {
       const path = call.path
       const method = call.method
       const operation = apiSchema.paths[path][method]
-
-      if (operation) {
-        const params = call.parameters
-        apiCalls.push({
-          url: address + assignPathParameters(path, params),
-          operationId: operation.operationId ? operation.operationId : path,
-          method,
-          endpoint: path,
-          parameters: params,
-          requestBody: assignRequestBodyParameters(params)
-        })
-      }
-    }
-
-    return apiCalls
-  } catch (error) {
-    console.error(' - Error building API calls: ', error.message)
-    return null
-  }
-}
-
-// Assign random values to endpoint parameters
-function buildApiCallsRandParams (callSequence) {
-  const apiCalls = []
-  const apiSchema = readApiSchema()
-
-  try {
-    const basePath = apiSchema.basePath.endsWith('/')
-      ? apiSchema.basePath.slice(0, -1)
-      : apiSchema.basePath
-
-    const address = apiSchema.schemes[0] + '://' + apiSchema.host + basePath
-
-    for (const call of callSequence) {
-      const path = call.path
-      const method = call.method
-      const operation = apiSchema.paths[path][method]
-
       if (operation) {
         let params = []
         if (operation.parameters) {
-          params = operation.parameters.map((param) => ({
-            type: param.type,
-            in: param.in,
-            name: param.name,
-            value: param.enum
-              ? pickRandomValueFromEnum(param.enum)
-              : generateRandomValue(param.type)
-          }))
+          if (useRandomParams) {
+            params = operation.parameters.map((param) => ({
+              type: param.type,
+              in: param.in,
+              name: param.name,
+              value: param.enum
+                ? pickRandomValueFromEnum(param.enum)
+                : generateRandomValue(param.type)
+            }))
+          } else {
+            params = call.parameters
+          }
         }
 
         apiCalls.push({
@@ -88,9 +55,19 @@ function buildApiCallsRandParams (callSequence) {
 
     return apiCalls
   } catch (error) {
-    console.error(' - Error building API calls: ', error.message)
+    console.error(' - Error building API calls (make sure that the correct schema is set): ', error.message)
     return null
   }
+}
+
+// Function for building API calls
+function buildApiCalls (callSequence) {
+  return buildApiCallsCommon(callSequence, false)
+}
+
+// Function for building API calls with random parameters
+function buildApiCallsRandParams (callSequence) {
+  return buildApiCallsCommon(callSequence, true)
 }
 
 // Send call sequence to SUT
@@ -138,7 +115,8 @@ async function sendApiCallToSut (apiCall) {
     try {
       console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${error.response.status}`)
     } catch (error) {
-      console.error(' - Error: Cannot connect to the SUT, ensure the correct API schema is used')
+      console.error(' - Error: Cannot connect to the SUT, ensure the correct SUT is running')
+      return null
     }
 
     if (error.response) {

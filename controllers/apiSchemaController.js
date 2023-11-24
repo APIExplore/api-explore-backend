@@ -1,11 +1,13 @@
-function getPathsAndMethods (apiSchema) {
+function getSchemaProperties (apiSchema) {
   const result = {}
   try {
     if (apiSchema && apiSchema.paths) {
+      // Extract all paths
       for (const path in apiSchema.paths) {
         const methods = apiSchema.paths[path]
         result[path] = {}
 
+        // Extract needed path properties
         for (const method in methods) {
           const operation = methods[method]
           if (operation) {
@@ -32,4 +34,4 @@ function getPathsAndMethods (apiSchema) {
   }
 }
 
-module.exports = getPathsAndMethods
+module.exports = getSchemaProperties

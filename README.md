@@ -22,9 +22,9 @@ Online:
 
 ## Endpoints
 
-### Fetch all API Schemas from DB (mocked)
+### Fetch all API Schemas from DB
 
-Fetches the names of all API schemas saved on the database (currently sends the names of three mocked API schemas, can still be fetched via name).
+Fetches the names of all API schemas saved on the database
 
 #### Request
 
@@ -47,16 +47,13 @@ Returns a JSON array of API schema names, e.g.,:
 ]
 ```
 
-### Fetch API Schema by Name from DB (mocked)
+### Fetch API Schema by Name from DB
 
-Fetches an API schema by name (passed via URL) by sending a GET request to `/apiSchema/fetch/:schemaName`.
+Fetches an API schema by name (passed via URL) by sending a `GET` request to `/apiSchema/fetch/:schemaName`.
 
 #### Request
 
-Send a GET request to `/apiSchema/fetch/:schemaName` (replace :schemaName with actual name). Currently mocked, with three working names:
- - feature-service
- - languagetool
- - disease
+Send a `GET` request to `/apiSchema/fetch/:schemaName` (replace :schemaName with actual name).
 
 #### Response
 
@@ -108,11 +105,11 @@ In case of failure, an error message will be sent instead, e.g.,:
 
 ### Fetch API Schema by URL and upload to Firebase
 
-You can fetch the API schema from the SUT by sending a POST request to `/apiSchema/fetch` and providing the address to the schema in the request body. This also saves a local copy on the backend `apiSchema.json` (currently in the `/schemas` directory).
+You can fetch the API schema from the SUT by sending a `POST` request to `/apiSchema/fetch` and providing the address to the schema in the request body. This also saves a local copy on the backend `apiSchema.json` (currently in the `/schemas` directory). 
 
 #### Request
 
-Send a POST request to `/apiSchema/fetch` with the following JSON data in the request body:
+Send a `POST` request to `/apiSchema/fetch` with the following JSON data in the request body:
 
 ```json
 {
@@ -125,7 +122,7 @@ Same as [Fetch API Schema by Name from DB (mocked)](#Fetch-API-Schema-by-Name-fr
 
 ### Set API Schema through file upload and and upload to Firebase
 
-You can set an imported API schema by sending a POST request to `/apiSchema/set` and providing the API schema (JSON) in the request body. This  saves a local copy on the backend `apiSchema.json` (currently in the `/schemas` directory).
+You can set an imported API schema by sending a `POST` request to `/apiSchema/set` and providing the API schema (JSON) in the request body. This  saves a local copy on the backend `apiSchema.json` (currently in the `/schemas` directory).
 
 #### Request
 
@@ -136,14 +133,15 @@ Same as [Fetch API Schema by Name from DB (mocked)](#Fetch-API-Schema-by-Name-fr
 
 ### Random Exploration
 
-You can initiate random exploration by sending a POST request to `/explore/random`, after setting or fetching an API schema and providing a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase (currently in the `test_api_calls` collection)
+You can initiate random exploration by sending a `POST` request to `/explore/random`, after setting or fetching an API schema, then providing a call sequence name and a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase. If an existing sequence name is used, the calls will be added to that sequence, otherwise a new one is created on the database.
 
 #### Request
 
-Send a POST request to `/explore/random` with  JSON data in the request body following a similar structure to:
+Send a `POST` request to `/explore/random` with  JSON data in the request body following a similar structure to:
 
 ```json
 {
+  "name": "random-exploration",
   "callSequence": [
     {
       "path": "/products/{productName}/features",
@@ -223,14 +221,15 @@ The JSON structure of each API call received over the socket would be:
 
 ### Exploration
 
-Exporation can be initiated by sending a POST request to `/explore`, after setting or fetching an API schema and providing a set of operations to run in the request body (including parameter values). Once the call sequence has finished, all calls along with response data will be uploaded on Firebase (currently in the `test_api_calls` collection)
+Exporation can be initiated by sending a POST request to `/explore`, after fetching and setting an API schema, then providing a set of operations to run in the request body (including parameter values) as well as the call sequence name. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase. If an existing sequence name is used, the calls will be added to that sequence, otherwise a new one is created on the database.
 
 #### Request
 
-Send a POST request to `/explore` with  JSON data in the request body following a similar structure to:
+Send a `POST` request to `/explore` with JSON data in the request body following a similar structure to:
 
 ```json
 {
+  "name": "exploration"
   "callSequence": [
     {
       "path": "/products/{productName}",
@@ -251,3 +250,69 @@ Send a POST request to `/explore` with  JSON data in the request body following 
 #### Response
 
 [Random Exploration](#Random-Exploration/response)
+
+### Fetch all call sequences for schema
+
+Fetches all call sequences tied to the active schema (set through initial fetch/set API schema call).
+
+#### Request
+
+Send a `GET` request to `/callsequence/fetch`
+
+#### Response
+
+A JSON encoded array with a set of sequence names tied to current schema:
+```json
+[
+  {
+    "name": "test123"
+  },
+  {
+    "name": "feature-service-random"
+  },
+  {
+    "name": "feature-service"
+  }
+]
+```
+
+### Fetch specific call sequence from schema
+
+Fetches a call sequences tied to the active schema (set through initial fetch/set API schema call).
+
+#### Request
+
+Send a `GET` request to `/callsequence/fetch/:sequenceName`
+
+#### Response
+
+A JSON encoded array with all API calls in the sequence:
+```json
+[
+  {
+    "date": "Fri, 24 Nov 2023 14:6:47:768",
+    "duration": 10,
+    "endpoint": "/products/{productName}/configurations",
+    "method": "get",
+    "requestBody": {
+      "formData": {}
+    },
+    "response": {
+      "date": "Fri, 24 Nov 2023 14:6:47:778",
+      "data": [],
+      "status": 200
+    },
+    "operationId": "getConfigurationsForProduct",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "productName",
+        "type": "string",
+        "value": "k4yrg"
+      }
+    ],
+    "sequenceId": "52819061-3547-479a-9c33-feeacbfb906e"
+  },
+  ...
+]
+```
