@@ -250,3 +250,69 @@ Send a `POST` request to `/explore` with JSON data in the request body following
 #### Response
 
 Same as [Random Exploration](#Random-Exploration/response)
+
+### Fetch all call sequences for schema
+
+Fetches all call sequences tied to the active schema (set through initial fetch/set API schema call).
+
+#### Request
+
+Send a `GET` request to `/callsequence/fetch`
+
+#### Response
+
+A JSON encoded array with a set of sequence names tied to current schema:
+```json
+[
+  {
+    "name": "test123"
+  },
+  {
+    "name": "feature-service-random"
+  },
+  {
+    "name": "feature-service"
+  }
+]
+```
+
+### Fetch specific call sequence from schema
+
+Fetches a call sequences tied to the active schema (set through initial fetch/set API schema call).
+
+#### Request
+
+Send a `GET` request to `/callsequence/fetch/:sequenceName`
+
+#### Response
+
+A JSON encoded array with all API calls in the sequence:
+```json
+[
+  {
+    "date": "Fri, 24 Nov 2023 14:6:47:768",
+    "duration": 10,
+    "endpoint": "/products/{productName}/configurations",
+    "method": "get",
+    "requestBody": {
+      "formData": {}
+    },
+    "response": {
+      "date": "Fri, 24 Nov 2023 14:6:47:778",
+      "data": [],
+      "status": 200
+    },
+    "operationId": "getConfigurationsForProduct",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "productName",
+        "type": "string",
+        "value": "k4yrg"
+      }
+    ],
+    "sequenceId": "52819061-3547-479a-9c33-feeacbfb906e"
+  },
+  ...
+]
+```
