@@ -5,7 +5,8 @@ const cors = require('cors')
 const debug = require('debug')('API-EXPLORE-BACKEND:server')
 
 const exploreRouter = require('./routes/explore')
-const apiSchemaRouter = require('./routes/apiSchema')
+const { router: apiSchemaRouter } = require('./routes/apiSchema')
+const callSequenceRouter = require('./routes/callSequence')
 const errorHandler = require('./middleware/errorHandler')
 
 const app = express()
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: false }))
 // Routes
 app.use('/apischema', apiSchemaRouter)
 app.use('/explore', exploreRouter)
+app.use('/callsequence', callSequenceRouter)
 
 // Error handling middleware
 app.use(errorHandler.forward404)
