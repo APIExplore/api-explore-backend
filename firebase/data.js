@@ -1,9 +1,18 @@
-const { v4: generateId } = require('uuid')
-
 const { db } = require('../firebase/config')
 
+//Function to create a Firestore collection (in our case: api_calls, api_sequences or api_schemas collections)
+async function createCollection(collectionName) {
+  const collectionRef = db.collection(collectionName);
+  try {
+    await collectionRef.add({}); 
+    console.log(`Collection '${collectionName}' created successfully.`);
+  } catch (error) {
+    console.error(`Error creating collection '${collectionName}':`, error);
+  }
+}
+
 // Function for uploading a sequence of API calls to Firebase
-async function addApiCallSequence (collectionName, apiCalls) {
+async function uploadApiCallSequence (collectionName, apiCalls) {
   console.log(' - Uploading call sequence to firebase...')
   const total = apiCalls.length
   let count = 0
@@ -18,13 +27,50 @@ async function addApiCallSequence (collectionName, apiCalls) {
       requestBody: apiCall.requestBody,
       date: apiCall.date,
       duration: apiCall.duration,
-      response: apiCall.response
+      response: apiCall.response,
+      id: documentName
     }
     await addApiCall(collectionName, documentName, data)
     printProgressBar(total, ++count)
   }
   console.log('\n - Call sequence has been uploaded')
 }
+
+// Function to create or update a sequence for a specific API schema
+async function addApiCallSequence(apiSchemaId, sequenceId, sequenceName) {
+  const apiCallSequencesCollectionRef = db.collection('api_call_sequences');
+
+  try {
+    const docRef = apiCallSequencesCollectionRef.doc(sequenceId);
+    await docRef.set({
+      apiSchemaId: apiSchemaId,
+      sequenceName: sequenceName,
+    });
+
+    console.log('API Call Sequence added or updated to Firestore with ID:', sequenceId);
+  } catch (error) {
+    console.error('Error adding or updating API Call Sequence to Firestore:', error);
+  }
+}
+
+
+// Function to create or update an API schema
+async function addApiSchema(apiSchemaId, apiSchema, name) {
+  const apiSchemasCollectionRef = db.collection('api_schemas');
+
+  try {
+    const docRef = apiSchemasCollectionRef.doc(apiSchemaId);
+    await docRef.set({
+      apiSchema: apiSchema, 
+      name: name 
+    });
+
+    console.log('API Schema added or updated in Firestore with ID:', apiSchemaId);
+  } catch (error) {
+    console.error('Error adding or updating API Schema in Firestore:', error);
+  }
+}
+
 
 // Function to add an API call to the Firestore database
 async function addApiCall (collectionName, documentName, data) {
@@ -38,6 +84,46 @@ async function addApiCall (collectionName, documentName, data) {
   }
 }
 
+// Function to get all the sequences, apiScehmas, or apiCalls
+async function getAllApiInfo(collectionName) {
+  const collectionRef = db.collection(collectionName);
+
+  try {
+    const querySnapshot = await collectionRef.get();
+    const apiInfo = [];
+
+    querySnapshot.forEach((doc) => {
+      const apiData = doc.data();
+      apiInfo.push(apiData);
+    });
+
+    return apiInfo;
+  } catch (error) {
+    console.error(`Error getting from ${collectionName} in Firestore:`, error);
+    return [];
+  }
+}
+
+// Function to get a specific sequence, apiCall, or schema
+async function getApiInfoByName(collectionName, documentName) {
+  const collectionRef = db.collection(collectionName);
+
+  try {
+    const docSnapshot = await collectionRef.doc(documentName).get();
+
+    if (docSnapshot.exists) {
+      const apiData = docSnapshot.data();
+      return apiData;
+    } else {
+      console.log('No matching information found.');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting API information from Firestore:', error);
+    return null;
+  }
+}
+
 function printProgressBar (total, count) {
   const percentage = Math.round((count / total) * 100)
   process.stdout.clearLine()
@@ -45,4 +131,4 @@ function printProgressBar (total, count) {
   process.stdout.write(` - Progress: [${'#'.repeat(percentage / 10)}${'.'.repeat(10 - percentage / 10)}] ${percentage}%`)
 }
 
-module.exports = { addApiCallSequence }
+module.exports = { getAllApiInfo, getApiInfoByName, createCollection, uploadApiCallSequence, addApiCallSequence, addApiSchema }
