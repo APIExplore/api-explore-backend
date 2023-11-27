@@ -65,7 +65,7 @@ router.get('/fetch/:schemaName', async function (req, res, next) {
       schemaInfo.name = schemaName
 
       // Send data in response
-      console.log(' - Paths and methods sent in request body')
+      console.log(' - Paths, methods and definitions sent in request body')
       res.json(resData)
     } else {
       console.error(` - Schema '${schemaName}' does not exist `)
@@ -157,7 +157,7 @@ async function setApiSchema (req, res, next, isUpload) {
     schemaInfo.id = schemaId
     schemaInfo.name = schemaName
 
-    console.log(' - Paths and methods sent in request body')
+    console.log(' - Paths, methods and definitions sent in request body')
     return res.status(201).json(resData)
   } catch (error) {
     console.error(` - Error handling API schema: ${error.message}`)
