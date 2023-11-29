@@ -38,7 +38,7 @@ function buildApiCallsCommon (callSequence, useRandomParams) {
                 : generateRandomValue(param.type)
             }))
           } else {
-            params = call.parameters
+            params = call.params
           }
         }
 
@@ -70,12 +70,11 @@ function buildApiCallsRandParams (callSequence) {
   return buildApiCallsCommon(callSequence, true)
 }
 
-// Send call sequence to SUT
+// Function for sending single API calls to SUT
 async function sendApiCallToSut (apiCall) {
-  try {
-    // Get formatted timestamp
-    apiCall.date = getDate()
+  let dateBefore = new Date()
 
+  try {
     const axiosConfig = {
       method: apiCall.method,
       url: apiCall.url
@@ -92,26 +91,34 @@ async function sendApiCallToSut (apiCall) {
     }
 
     // Call the SUT
+    dateBefore = new Date()
     const response = await axios(axiosConfig)
-
-    // Record response data
-    const responseDate = getDate()
-    apiCall.response = {
-      status: response.status,
-      date: responseDate,
-      data: response.data
-    }
-
-    // Calculate call duration
-    const start = new Date(apiCall.date)
-    const end = new Date(apiCall.response.date)
-    apiCall.duration = end - start
+    const dateAfter = new Date()
 
     console.log(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
 
+    // If the call already has a response, it is used to restore state (no need to record data)
+    if (apiCall.response) {
+      if (response.status !== apiCall.response.status) {
+        console.log(`   - status of API call '${apiCall.operationId}' has changed from '${apiCall.response.status}' to '${response.status}'`)
+      }
+    } else {
+      apiCall.date = getTimestamp(dateBefore)
+      apiCall.response = {
+        status: response.status,
+        date: getTimestamp(dateAfter),
+        data: response.data
+      }
+
+      // Calculate call duration
+      apiCall.duration = dateAfter - dateBefore
+    }
+
     return apiCall
   } catch (error) {
-    const responseDate = getDate()
+    apiCall.date = getTimestamp(dateBefore)
+    const dateAfter = new Date()
+
     try {
       console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${error.response.status}`)
     } catch (error) {
@@ -120,19 +127,25 @@ async function sendApiCallToSut (apiCall) {
     }
 
     if (error.response) {
-      apiCall.response = {
-        status: error.response.status,
-        date: responseDate,
-        data: error.response.data
+      if (apiCall.response) {
+        if (error.response.status !== apiCall.response.status) {
+          console.log(`   - status of API call '${apiCall.operationId}' has changed from '${apiCall.response.status}' to '${error.response.status}'`)
+        }
+      } else {
+        apiCall.response = {
+          status: error.response.status,
+          date: getTimestamp(dateAfter),
+          data: error.response.data
+        }
+
+        apiCall.duration = dateAfter - dateBefore
+
+        return apiCall
       }
-
-      const start = new Date(apiCall.date)
-      const end = new Date(apiCall.response.date)
-      apiCall.duration = end - start
-
-      return apiCall
     }
+
     apiCall.error = error
+
     return apiCall
   }
 }
@@ -200,23 +213,21 @@ function pickRandomValueFromEnum (enumValues) {
   return enumValues[Math.floor(Math.random() * enumValues.length)]
 }
 
-function getDate () {
-  const timestamp = new Date()
-
+function getTimestamp (date) {
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const months = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ]
 
-  const dayOfWeek = daysOfWeek[timestamp.getDay()]
-  const day = timestamp.getDate()
-  const month = months[timestamp.getMonth()]
-  const year = timestamp.getFullYear()
-  const hours = timestamp.getHours()
-  const minutes = timestamp.getMinutes()
-  const seconds = timestamp.getSeconds()
-  const milliseconds = timestamp.getMilliseconds()
+  const dayOfWeek = daysOfWeek[date.getDay()]
+  const day = date.getDate()
+  const month = months[date.getMonth()]
+  const year = date.getFullYear()
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  const seconds = date.getSeconds()
+  const milliseconds = date.getMilliseconds()
 
   return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}:${milliseconds}`
 }

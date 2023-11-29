@@ -66,7 +66,7 @@ router.get('/fetch/:schemaName', async function (req, res, next) {
 
       // Send data in response
       console.log(' - Paths, methods and definitions sent in request body')
-      res.json(resData)
+      res.status(201).json(resData)
     } else {
       console.error(` - Schema '${schemaName}' does not exist `)
       res.status(404).json({ error: `Schema '${schemaName}' does not exist ` })
@@ -79,13 +79,13 @@ router.get('/fetch/:schemaName', async function (req, res, next) {
 
 // Common function for fetching and setting API schema
 async function setApiSchema (req, res, next, isUpload) {
-  const schemaName = req.body.name.trim()
-
   // Ensure the request body has a name property (for the schema)
-  if (!schemaName) {
+  if (!req.body.name) {
     console.error(' - Error: no name specified for the schema')
     return res.status(400).json({ error: 'No API schema name specified' })
   }
+
+  const schemaName = req.body.name.trim()
 
   try {
     let apiSchema
@@ -105,7 +105,7 @@ async function setApiSchema (req, res, next, isUpload) {
       apiSchema = readApiSchema(filePath)
 
       if (!apiSchema) {
-        return res.status(500).json({ error: 'Failed to read API schema' })
+        return res.status(400).json({ error: 'Failed to read API schema, ensure correct JSON structure in the provided file' })
       }
 
       resData = getSchemaProperties(apiSchema)
@@ -136,6 +136,11 @@ async function setApiSchema (req, res, next, isUpload) {
       resData = getSchemaProperties(apiSchema)
     }
 
+    if (!resData) {
+      console.error(' - Error: failed to get API schema properties, ensure a correct API schema was provided')
+      return res.status(400).json({ error: 'Failed to get API schema properties, ensure a correct API schema was provided' })
+    }
+
     let schemaId = null
 
     // Check if schema name exists in DB
@@ -160,19 +165,30 @@ async function setApiSchema (req, res, next, isUpload) {
     console.log(' - Paths, methods and definitions sent in request body')
     return res.status(201).json(resData)
   } catch (error) {
-    console.error(` - Error handling API schema: ${error.message}`)
-    return res.status(500).json({ error: 'Error handling API schema' })
+    if (isUpload) {
+      console.error(` - Error setting API schema through file upload: ${error.message}`)
+      return res.status(400).json({ error: 'Error setting API schema through file upload', message: error.message })
+    }
+    console.error(` - Failed to fetch API schema from URL '${req.body.address}: ${error.message}`)
+    return res.status(400).json({ error: `Failed to fetch API schema from URL '${req.body.address}'`, message: error.message })
   }
 }
 
 // Fetch and set schema from URL and add to database
 router.post('/fetch', async function (req, res, next) {
-  return await setApiSchema(req, res, next, false)
+  return setApiSchema(req, res, next, false)
 })
 
 // Set schema through file upload and add to database
-router.post('/set', uploadSchema.single('file'), async function (req, res, next) {
-  return await setApiSchema(req, res, next, true)
+router.post('/set', async function (req, res, next) {
+  uploadSchema.single('file')(req, res, (err) => {
+    if (err) {
+      console.error(' - Error:', err.message)
+      return res.status(err.status || 500).json({ error: err.message })
+    }
+
+    return setApiSchema(req, res, next, true)
+  })
 })
 
 module.exports = { router, schemaInfo }

@@ -135,6 +135,8 @@ Same as [Fetch API Schema by Name from DB (mocked)](#Fetch-API-Schema-by-Name-fr
 
 You can initiate random exploration by sending a `POST` request to `/explore/random`, after setting or fetching an API schema, then providing a call sequence name and a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase. If an existing sequence name is used, the calls will be added to that sequence, otherwise a new one is created on the database.
 
+`Note:` Need to ensure the SUT is restarted whenever a different sequence name is used, or whenever the API schema is changed.
+
 #### Request
 
 Send a `POST` request to `/explore/random` with  JSON data in the request body following a similar structure to:
@@ -222,6 +224,8 @@ The JSON structure of each API call received over the socket would be:
 ### Exploration
 
 Exporation can be initiated by sending a POST request to `/explore`, after fetching and setting an API schema, then providing a set of operations to run in the request body (including parameter values) as well as the call sequence name. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase. If an existing sequence name is used, the calls will be added to that sequence, otherwise a new one is created on the database.
+
+`Note:` Need to ensure the SUT is restarted whenever a different sequence name is used, or whenever the API schema is changed.
 
 #### Request
 

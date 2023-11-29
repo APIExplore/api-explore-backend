@@ -29,39 +29,6 @@
         ]
       }
     },
-    "/products/{productName}/constraints/requires": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addRequiresConstraintToProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "sourceFeature",
-            "type": "string",
-            "required": false
-          },
-          {
-            "in": "formData",
-            "name": "requiredFeature",
-            "type": "string",
-            "required": false
-          }
-        ]
-      }
-    },
     "/products/{productName}/configurations/{configurationName}": {
       "post": {
         "produces": [
@@ -143,21 +110,14 @@
         ]
       }
     },
-    "/products/{productName}/configurations/{configurationName}/features": {
-      "get": {
+    "/products/{productName}/constraints/requires": {
+      "post": {
         "produces": [
           "application/json"
         ],
-        "operationId": "getConfigurationActivedFeatures",
+        "operationId": "addRequiresConstraintToProduct",
         "responses": {
-          "200": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "headers": {},
+          "default": {
             "description": "successful operation"
           }
         },
@@ -169,22 +129,16 @@
             "required": true
           },
           {
-            "in": "path",
-            "name": "configurationName",
+            "in": "formData",
+            "name": "sourceFeature",
             "type": "string",
-            "required": true
+            "required": false
           },
           {
-            "in": "path",
-            "name": "productName",
+            "in": "formData",
+            "name": "requiredFeature",
             "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
+            "required": false
           }
         ]
       }
@@ -246,6 +200,52 @@
           {
             "in": "path",
             "name": "productName",
+            "type": "string",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/products/{productName}/configurations/{configurationName}/features": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "getConfigurationActivedFeatures",
+        "responses": {
+          "200": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "headers": {},
+            "description": "successful operation"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "productName",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "configurationName",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "productName",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "configurationName",
             "type": "string",
             "required": true
           }
@@ -617,9 +617,6 @@
     "ProductsFeaturesResource": {
       "type": "object"
     },
-    "ProductsConstraintsResource": {
-      "type": "object"
-    },
     "Feature": {
       "type": "object",
       "properties": {
@@ -634,6 +631,9 @@
           "type": "integer"
         }
       }
+    },
+    "ProductsConstraintsResource": {
+      "type": "object"
     }
   },
   "swagger": "2.0",
