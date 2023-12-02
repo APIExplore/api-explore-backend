@@ -1,563 +1,573 @@
 {
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0"
+  },
+  "host": "localhost:8080",
   "basePath": "/",
+  "schemes": [
+    "http"
+  ],
   "paths": {
-    "/products/{productName}/constraints/{constraintId}": {
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteConstraint",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "constraintId",
-            "format": "int64",
-            "type": "integer",
-            "required": true
-          }
-        ]
-      }
-    },
     "/products/{productName}/configurations/{configurationName}": {
-      "post": {
+      "get": {
+        "operationId": "getConfigurationWithNameForProduct",
         "produces": [
           "application/json"
         ],
-        "operationId": "addConfiguration",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
         "parameters": [
           {
-            "in": "path",
             "name": "productName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           },
           {
-            "in": "path",
             "name": "configurationName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
-        ]
-      },
-      "get": {
-        "produces": [
-          "application/json"
         ],
-        "operationId": "getConfigurationWithNameForProduct",
         "responses": {
           "200": {
+            "description": "successful operation",
             "schema": {
               "$ref": "#/definitions/ProductConfiguration"
             },
-            "headers": {},
-            "description": "successful operation"
+            "headers": {}
           }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          }
-        ]
+        }
       },
-      "delete": {
+      "post": {
+        "operationId": "addConfiguration",
         "produces": [
           "application/json"
         ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "configurationName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "delete": {
         "operationId": "deleteConfiguration",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
-            "in": "path",
             "name": "productName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           },
           {
-            "in": "path",
             "name": "configurationName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
-        ]
-      }
-    },
-    "/products/{productName}/constraints/requires": {
-      "post": {
-        "produces": [
-          "application/json"
         ],
-        "operationId": "addRequiresConstraintToProduct",
         "responses": {
           "default": {
             "description": "successful operation"
           }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "sourceFeature",
-            "type": "string",
-            "required": false
-          },
-          {
-            "in": "formData",
-            "name": "requiredFeature",
-            "type": "string",
-            "required": false
-          }
-        ]
-      }
-    },
-    "/products/{productName}": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      },
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getProductByName",
-        "responses": {
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Product"
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteProductByName",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
+        }
       }
     },
     "/products/{productName}/configurations/{configurationName}/features": {
       "get": {
-        "produces": [
-          "application/json"
-        ],
         "operationId": "getConfigurationActivedFeatures",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "configurationName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "configurationName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
+            "description": "successful operation",
             "schema": {
               "type": "array",
               "items": {
                 "type": "string"
               }
             },
-            "headers": {},
-            "description": "successful operation"
+            "headers": {}
           }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/features": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getFeaturesForProduct",
-        "responses": {
-          "200": {
-            "schema": {
-              "uniqueItems": true,
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Feature"
-              }
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/configurations": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getConfigurationsForProduct",
-        "responses": {
-          "200": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
+        }
       }
     },
     "/products/{productName}/configurations/{configurationName}/features/{featureName}": {
       "post": {
-        "produces": [
-          "application/json"
-        ],
         "operationId": "addFeatureToConfiguration",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "configurationName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "featureName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "configurationName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "default": {
             "description": "successful operation"
           }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          }
-        ]
+        }
       },
       "delete": {
-        "produces": [
-          "application/json"
-        ],
         "operationId": "deleteFeature",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
-            "in": "path",
             "name": "productName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           },
           {
-            "in": "path",
             "name": "configurationName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           },
           {
-            "in": "path",
             "name": "featureName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           },
           {
-            "in": "path",
             "name": "productName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           },
           {
-            "in": "path",
             "name": "configurationName",
-            "type": "string",
-            "required": true
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
-        ]
-      }
-    },
-    "/products/{productName}/features/{featureName}": {
-      "post": {
-        "produces": [
-          "application/json"
         ],
-        "operationId": "addFeatureToProduct",
         "responses": {
           "default": {
             "description": "successful operation"
           }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "description",
-            "type": "string",
-            "required": false
-          }
-        ]
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteFeatureOfProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      },
-      "put": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "updateFeatureOfProduct",
-        "responses": {
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Feature"
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "description",
-            "type": "string",
-            "required": false
-          }
-        ]
+        }
       }
     },
-    "/products/{productName}/constraints/excludes": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addExcludesConstraintToProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "sourceFeature",
-            "type": "string",
-            "required": false
-          },
-          {
-            "in": "formData",
-            "name": "excludedFeature",
-            "type": "string",
-            "required": false
-          }
-        ]
-      }
-    },
-    "/products": {
+    "/products/{productName}/configurations": {
       "get": {
+        "operationId": "getConfigurationsForProduct",
         "produces": [
           "application/json"
         ],
-        "operationId": "getAllProducts",
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
+            "description": "successful operation",
             "schema": {
               "type": "array",
               "items": {
                 "type": "string"
               }
             },
-            "headers": {},
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/products/{productName}/constraints/requires": {
+      "post": {
+        "operationId": "addRequiresConstraintToProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sourceFeature",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "requiredFeature",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
             "description": "successful operation"
           }
-        },
-        "parameters": []
+        }
+      }
+    },
+    "/products/{productName}/constraints/excludes": {
+      "post": {
+        "operationId": "addExcludesConstraintToProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sourceFeature",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "excludedFeature",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/products/{productName}/constraints/{constraintId}": {
+      "delete": {
+        "operationId": "deleteConstraint",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "constraintId",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/products/{productName}": {
+      "get": {
+        "operationId": "getProductByName",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Product"
+            },
+            "headers": {}
+          }
+        }
+      },
+      "post": {
+        "operationId": "addProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProductByName",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "operationId": "getAllProducts",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/products/{productName}/features/{featureName}": {
+      "post": {
+        "operationId": "addFeatureToProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "featureName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateFeatureOfProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "featureName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "description",
+            "in": "formData",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Feature"
+            },
+            "headers": {}
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteFeatureOfProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "featureName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/products/{productName}/features": {
+      "get": {
+        "operationId": "getFeaturesForProduct",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "productName",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/definitions/Feature"
+              }
+            },
+            "headers": {}
+          }
+        }
       }
     }
   },
-  "host": "localhost:8080",
-  "schemes": [
-    "http"
-  ],
   "definitions": {
-    "FeatureConstraint": {
+    "ProductsConfigurationResource": {
+      "type": "object"
+    },
+    "Feature": {
       "type": "object",
       "properties": {
         "id": {
-          "format": "int64",
-          "type": "integer"
+          "type": "integer",
+          "format": "int64"
         },
-        "type": {
+        "name": {
+          "type": "string"
+        },
+        "description": {
           "type": "string"
         }
       }
@@ -565,17 +575,35 @@
     "ProductConfiguration": {
       "type": "object",
       "properties": {
+        "name": {
+          "type": "string"
+        },
         "valid": {
           "type": "boolean"
         },
         "activedFeatures": {
-          "uniqueItems": true,
           "type": "array",
+          "uniqueItems": true,
           "items": {
             "$ref": "#/definitions/Feature"
           }
+        }
+      }
+    },
+    "ProductsConfigurationFeaturesResource": {
+      "type": "object"
+    },
+    "ProductsConstraintsResource": {
+      "type": "object"
+    },
+    "FeatureConstraint": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
         },
-        "name": {
+        "type": {
           "type": "string"
         }
       }
@@ -583,61 +611,33 @@
     "Product": {
       "type": "object",
       "properties": {
-        "features": {
-          "uniqueItems": true,
-          "readOnly": true,
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Feature"
-          }
+        "id": {
+          "type": "integer",
+          "format": "int64"
         },
         "name": {
           "type": "string"
         },
-        "id": {
-          "format": "int64",
-          "type": "integer"
+        "features": {
+          "type": "array",
+          "readOnly": true,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/definitions/Feature"
+          }
         },
         "constraints": {
-          "uniqueItems": true,
-          "readOnly": true,
           "type": "array",
+          "readOnly": true,
+          "uniqueItems": true,
           "items": {
             "$ref": "#/definitions/FeatureConstraint"
           }
         }
       }
     },
-    "ProductsConfigurationResource": {
-      "type": "object"
-    },
-    "ProductsConfigurationFeaturesResource": {
-      "type": "object"
-    },
     "ProductsFeaturesResource": {
       "type": "object"
-    },
-    "Feature": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "id": {
-          "format": "int64",
-          "type": "integer"
-        }
-      }
-    },
-    "ProductsConstraintsResource": {
-      "type": "object"
     }
-  },
-  "swagger": "2.0",
-  "info": {
-    "version": "1.0"
   }
 }

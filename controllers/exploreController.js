@@ -98,10 +98,19 @@ async function sendApiCallToSut (apiCall) {
     console.log(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
 
     // If the call already has a response, it is used to restore state (no need to record data)
+    const warnings = []
     if (apiCall.response) {
       if (response.status !== apiCall.response.status) {
-        console.log(`   - status of API call '${apiCall.operationId}' has changed from '${apiCall.response.status}' to '${response.status}'`)
+        console.log(`   - Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${response.status}'`)
+        warnings.push({ warning: `Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${response.status}` })
       }
+
+      if (!jsonEqual(response.data, apiCall.response.data)) {
+        console.log(`   - Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed'`)
+        warnings.push({ warning: `Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed` })
+      }
+
+      apiCall.warnings = warnings
     } else {
       apiCall.date = getTimestamp(dateBefore)
       apiCall.response = {
@@ -127,21 +136,29 @@ async function sendApiCallToSut (apiCall) {
     }
 
     if (error.response) {
+      const warnings = []
       if (apiCall.response) {
         if (error.response.status !== apiCall.response.status) {
-          console.log(`   - status of API call '${apiCall.operationId}' has changed from '${apiCall.response.status}' to '${error.response.status}'`)
+          console.log(`   - Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${error.response.status}'`)
+          warnings.push({ warning: `Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${error.response.status}` })
         }
+
+        if (!jsonEqual(error.response.data, apiCall.response.data)) {
+          console.log(`   - Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed'`)
+          warnings.push({ warning: `Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed` })
+        }
+
+        apiCall.warnings = warnings
       } else {
         apiCall.response = {
           status: error.response.status,
           date: getTimestamp(dateAfter),
           data: error.response.data
         }
-
         apiCall.duration = dateAfter - dateBefore
-
-        return apiCall
       }
+
+      return apiCall
     }
 
     apiCall.error = error
@@ -211,6 +228,45 @@ function generateRandomValue (type) {
 
 function pickRandomValueFromEnum (enumValues) {
   return enumValues[Math.floor(Math.random() * enumValues.length)]
+}
+
+function jsonEqual (a, b) {
+  const keysA = Object.keys(a).sort()
+  const keysB = Object.keys(b).sort()
+
+  if (keysA.length !== keysB.length) {
+    return false
+  }
+
+  for (let i = 0; i < keysA.length; i++) {
+    const key = keysA[i]
+    const valueA = a[key]
+    const valueB = b[key]
+
+    if (Array.isArray(valueA) && Array.isArray(valueB)) {
+      if (!arraysEqual(valueA, valueB)) {
+        return false
+      }
+    } else if (valueA !== valueB) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function arraysEqual (a, b) {
+  if (a.length !== b.length) {
+    return false
+  }
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) {
+      return false
+    }
+  }
+
+  return true
 }
 
 function getTimestamp (date) {

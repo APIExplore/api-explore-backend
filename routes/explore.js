@@ -35,35 +35,46 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
 
   // Check if sequence name exists in DB for current schema
   let sequenceId = null
+  const warnings = []
   const match = await db.docWithNameAndSchemaIdExists(db.collections.apiCallSequences, schemaInfo.id, sequenceName)
   if (!match) {
+    // New sequence, add to the database
     console.log(' - New sequence, adding to DB')
     sequenceId = generateId()
     sequenceInfo.name = sequenceName
     sequenceInfo.id = sequenceId
     db.addApiCallSequence(schemaInfo.id, sequenceId, sequenceName)
   } else {
+    // Sequence already exists
     sequenceId = await db.getSequenceId(schemaInfo.id, sequenceName)
     if (!sequenceId) {
       return res.status(500).json({ error: 'Failed to get API call sequence ID from DB' })
     }
     console.log(` - Sequence name '${sequenceName}' already exists in DB for schema '${schemaInfo.name}'`)
 
+    // Check if another sequence was run prior to this one, if not, no need to restore the state.
     if (!(sequenceName === sequenceInfo.name) && !(sequenceId === sequenceInfo.id)) {
       sequenceInfo.name = sequenceName
       sequenceInfo.id = sequenceId
-      console.log('Sequence name has changed, restoring SUT state...')
+      console.log('Restoring SUT state...')
 
-      // Run previous calls in sequence to restore SUT state (assumes SUT has been reset)
+      // Run previous calls saved in the sequence to restore SUT state (assumes SUT has been reset).
       const previousApiCalls = await db.getApiCallsBySequenceId(sequenceId)
-      if (!previousApiCalls) {
-        return res.status(500).json({ error: `Failed to fetch API call sequence '${sequenceName}':${schemaInfo.id}` })
+      if (previousApiCalls === null) {
+        return res.status(500).json({ error: `Failed to fetch previous API calls of sequence '${sequenceName}':${schemaInfo.id}` })
       }
 
       for (const apiCall of previousApiCalls) {
         const response = await sendApiCallToSut(apiCall)
         if (!response) {
+          // Check for warnings (i.e., response status and/or data has changed)
           return res.status(500).json({ error: 'Cannot connect to the SUT, ensure the correct SUT is running and that the correct schema is used' })
+        }
+
+        if (response.warnings) {
+          for (const warning of response.warnings) {
+            warnings.push(warning)
+          }
         }
       }
 
@@ -90,6 +101,7 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
 
   db.uploadApiCallSequence(db.collections.apiCalls, sequenceId, responseObj.callSequence)
 
+  responseObj.warnings = warnings
   return res.status(201).json(responseObj)
 }
 
