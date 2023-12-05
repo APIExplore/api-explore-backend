@@ -98,30 +98,16 @@ async function sendApiCallToSut (apiCall) {
     console.log(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
 
     // If the call already has a response, it is used to restore state (no need to record data)
-    const warnings = []
-    if (apiCall.response) {
-      if (response.status !== apiCall.response.status) {
-        console.log(`   - Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${response.status}'`)
-        warnings.push({ warning: `Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${response.status}` })
-      }
 
-      if (!jsonEqual(response.data, apiCall.response.data)) {
-        console.log(`   - Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed'`)
-        warnings.push({ warning: `Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed` })
-      }
-
-      apiCall.warnings = warnings
-    } else {
-      apiCall.date = getTimestamp(dateBefore)
-      apiCall.response = {
-        status: response.status,
-        date: getTimestamp(dateAfter),
-        data: response.data
-      }
-
-      // Calculate call duration
-      apiCall.duration = dateAfter - dateBefore
+    apiCall.date = getTimestamp(dateBefore)
+    apiCall.response = {
+      status: response.status,
+      date: getTimestamp(dateAfter),
+      data: response.data
     }
+
+    // Calculate call duration
+    apiCall.duration = dateAfter - dateBefore
 
     return apiCall
   } catch (error) {
@@ -136,32 +122,13 @@ async function sendApiCallToSut (apiCall) {
     }
 
     if (error.response) {
-      const warnings = []
-      if (apiCall.response) {
-        if (error.response.status !== apiCall.response.status) {
-          console.log(`   - Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${error.response.status}'`)
-          warnings.push({ warning: `Status of API call '${apiCall.operationId}' (${apiCall.date}) has changed from '${apiCall.response.status}' to '${error.response.status}` })
-        }
-
-        if (!jsonEqual(error.response.data, apiCall.response.data)) {
-          console.log(`   - Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed'`)
-          warnings.push({ warning: `Data of API call '${apiCall.operationId}' (${apiCall.date}) has changed` })
-        }
-
-        apiCall.warnings = warnings
-      } else {
-        apiCall.response = {
-          status: error.response.status,
-          date: getTimestamp(dateAfter),
-          data: error.response.data
-        }
-        apiCall.duration = dateAfter - dateBefore
+      apiCall.response = {
+        status: error.response.status,
+        date: getTimestamp(dateAfter),
+        data: error.response.data
       }
-
-      return apiCall
+      apiCall.duration = dateAfter - dateBefore
     }
-
-    apiCall.error = error
 
     return apiCall
   }
@@ -169,6 +136,40 @@ async function sendApiCallToSut (apiCall) {
 
 function sendApiCallOverSocket (apiCall) {
   io.emit('apiCall', apiCall)
+}
+
+function compareCallSequence (prevCallSequence, curCallSequence) {
+  console.log('Comparing results with previous sequence...')
+  const warnings = []
+
+  if (prevCallSequence.length !== curCallSequence.length) {
+    console.log(` - The length of the call sequence has changed by ${curCallSequence.length - prevCallSequence.length} call(s)`)
+    warnings.push({ warning: `The length of the call sequence has changed by ${curCallSequence.length - prevCallSequence.length} call(s)` })
+    return warnings
+  }
+
+  for (let i = 0; i < curCallSequence.length; i++) {
+    const callA = curCallSequence[i]
+    const callB = prevCallSequence[i]
+
+    if (callA.operationId !== callB.operationId) {
+      console.log(` - Operation of API call #${i + 1} has changed from '${callB.operationId}' to '${callA.operationId}'`)
+      warnings.push({ warning: `Operation of API call #${i + 1} has changed from '${callB.operationId}' to '${callA.operationId}'` })
+      continue
+    }
+
+    if (callA.response.status !== callB.response.status) {
+      console.log(` - Response status of API call #${i + 1} '${callA.operationId}' has changed from '${callB.response.status}' to '${callA.response.status}'`)
+      warnings.push({ warning: `Response status of API call #${i + 1} '${callA.operationId}' has changed from '${callB.response.status}' to '${callA.response.status}'` })
+    }
+
+    if (!jsonEqual(callA.response.data, callB.response.data)) {
+      console.log(` - Response data of API call #${i + 1} '${callA.operationId}' has changed'`)
+      warnings.push({ warning: `Response data of API call #${i + 1} '${callA.operationId}' has changed` })
+    }
+  }
+
+  return warnings
 }
 
 // Helper functions
@@ -231,6 +232,10 @@ function pickRandomValueFromEnum (enumValues) {
 }
 
 function jsonEqual (a, b) {
+  if (typeof a !== 'object' || typeof b !== 'object') {
+    return a === b
+  }
+
   const keysA = Object.keys(a).sort()
   const keysB = Object.keys(b).sort()
 
@@ -243,25 +248,7 @@ function jsonEqual (a, b) {
     const valueA = a[key]
     const valueB = b[key]
 
-    if (Array.isArray(valueA) && Array.isArray(valueB)) {
-      if (!arraysEqual(valueA, valueB)) {
-        return false
-      }
-    } else if (valueA !== valueB) {
-      return false
-    }
-  }
-
-  return true
-}
-
-function arraysEqual (a, b) {
-  if (a.length !== b.length) {
-    return false
-  }
-
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) {
+    if (!jsonEqual(valueA, valueB)) {
       return false
     }
   }
@@ -288,4 +275,4 @@ function getTimestamp (date) {
   return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}:${milliseconds}`
 }
 
-module.exports = { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket }
+module.exports = { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket, compareCallSequence }

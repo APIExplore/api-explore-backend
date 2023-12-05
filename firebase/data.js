@@ -17,7 +17,7 @@ async function createCollection (collectionName) {
 
 // Function for uploading a sequence of API calls to Firebase
 async function uploadApiCallSequence (collectionName, sequenceId, apiCalls) {
-  console.log(' - Uploading call sequence to firebase...')
+  console.log('Uploading call sequence to firebase...')
   const total = apiCalls.length
   let count = 0
 
@@ -316,6 +316,31 @@ async function getApiCallsBySequenceId (sequenceId) {
   }
 }
 
+async function deleteApiCallsBySequenceId (sequenceId) {
+  console.log('Deleting previous call sequence...')
+
+  const collectionName = collections.apiCalls
+  const collectionRef = db.collection(collectionName)
+
+  try {
+    const querySnapshot = await collectionRef
+      .where('sequenceId', '==', sequenceId)
+      .get()
+
+    const batch = db.batch()
+    querySnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref)
+    })
+
+    await batch.commit()
+
+    return true
+  } catch (error) {
+    console.error(` - Failed to delete API calls of sequence ID '${sequenceId}'`)
+    return false
+  }
+}
+
 // Print progress bar when uploading API calls to DB
 function printProgressBar (total, count) {
   const percentage = Math.round((count / total) * 100)
@@ -337,5 +362,6 @@ module.exports = {
   getApiSequencesBySchemaId,
   getApiCallsBySequenceId,
   getNameById,
-  getSequenceId
+  getSequenceId,
+  deleteApiCallsBySequenceId
 }

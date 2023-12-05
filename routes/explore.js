@@ -7,11 +7,9 @@ const router = express.Router()
 const { v4: generateId } = require('uuid')
 
 const validateCallSequence = require('../utils/validators/callSequenceValidator')
-const { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket } = require('../controllers/exploreController')
+const { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket, compareCallSequence } = require('../controllers/exploreController')
 const db = require('../firebase/data')
 const { schemaInfo } = require('../routes/apiSchema')
-
-const sequenceInfo = { name: null, id: null }
 
 // Common function for API call sequence exploration
 async function exploreApiCallSequence (req, res, buildApiCallsFn) {
@@ -35,14 +33,12 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
 
   // Check if sequence name exists in DB for current schema
   let sequenceId = null
-  const warnings = []
+  let prevCalls
   const match = await db.docWithNameAndSchemaIdExists(db.collections.apiCallSequences, schemaInfo.id, sequenceName)
   if (!match) {
     // New sequence, add to the database
     console.log(' - New sequence, adding to DB')
     sequenceId = generateId()
-    sequenceInfo.name = sequenceName
-    sequenceInfo.id = sequenceId
     db.addApiCallSequence(schemaInfo.id, sequenceId, sequenceName)
   } else {
     // Sequence already exists
@@ -52,34 +48,17 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
     }
     console.log(` - Sequence name '${sequenceName}' already exists in DB for schema '${schemaInfo.name}'`)
 
-    // Check if another sequence was run prior to this one, if not, no need to restore the state.
-    if (!(sequenceName === sequenceInfo.name) && !(sequenceId === sequenceInfo.id)) {
-      sequenceInfo.name = sequenceName
-      sequenceInfo.id = sequenceId
-      console.log('Restoring SUT state...')
+    // Save a snapshot of the previous calls for later comparision
+    prevCalls = await db.getApiCallsBySequenceId(sequenceId)
 
-      // Run previous calls saved in the sequence to restore SUT state (assumes SUT has been reset).
-      const previousApiCalls = await db.getApiCallsBySequenceId(sequenceId)
-      if (previousApiCalls === null) {
-        return res.status(500).json({ error: `Failed to fetch previous API calls of sequence '${sequenceName}':${schemaInfo.id}` })
-      }
-
-      for (const apiCall of previousApiCalls) {
-        const response = await sendApiCallToSut(apiCall)
-        if (!response) {
-          // Check for warnings (i.e., response status and/or data has changed)
-          return res.status(500).json({ error: 'Cannot connect to the SUT, ensure the correct SUT is running and that the correct schema is used' })
-        }
-
-        if (response.warnings) {
-          for (const warning of response.warnings) {
-            warnings.push(warning)
-          }
-        }
-      }
-
-      console.log('SUT state restored, resuming exploration...')
+    // Delete previous calls from DB
+    const success = await db.deleteApiCallsBySequenceId(sequenceId)
+    if (success) {
+      console.log(' - Previous sequence deleted successfully')
+    } else {
+      return res.status(500).json({ error: `Failed to delete previous API calls in sequence '${sequenceName}'` })
     }
+    console.log('Resuming exploration...')
   }
 
   // Set the endpoint parameters and prepare necessary data to make calls (will return null on error, e.g, if active schema do not match)
@@ -99,9 +78,16 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
     responseObj.callSequence.push(response)
   }
 
+  // If the sequence has previous call data, compare and report changes.
+  if (prevCalls) {
+    responseObj.warnings = compareCallSequence(prevCalls, responseObj.callSequence)
+    if (responseObj.warnings.length === 0) {
+      console.log(' - No changes detected')
+    }
+  }
+
   db.uploadApiCallSequence(db.collections.apiCalls, sequenceId, responseObj.callSequence)
 
-  responseObj.warnings = warnings
   return res.status(201).json(responseObj)
 }
 
