@@ -349,6 +349,53 @@ function printProgressBar (total, count) {
   process.stdout.write(` - Progress: [${'#'.repeat(percentage / 10)}${'.'.repeat(10 - percentage / 10)}] ${percentage}%`)
 }
 
+// Get a specific API sequence from the schema by its name
+async function getApiSequenceByName(sequenceName, schemaId) {
+  const collectionRef = db.collection(collections.apiCallSequences);
+
+  try {
+    const docSnapshot = await collectionRef
+        .where('apiSchemaId', '==', schemaId)
+        .where('name', '==', sequenceName)
+        .get();
+
+    if (!docSnapshot.empty) {
+      const sequenceData = docSnapshot.docs[0].data();
+      return { id: docSnapshot.docs[0].id, ...sequenceData };
+    } else {
+      console.log(`Sequence '${sequenceName}' not found`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Error getting API sequence with name '${sequenceName}' from Firestore:`, error);
+    return null;
+  }
+}
+
+// Update an API sequence's favorite flag by its name
+async function updateApiSequenceFavorite(sequenceName, newFavoriteFlag) {
+  const collectionRef = db.collection(collections.apiCallSequences);
+
+  try {
+    const sequenceSnapshot = await collectionRef.where('name', '==', sequenceName).get();
+
+    if (!sequenceSnapshot.empty) {
+      const sequenceId = sequenceSnapshot.docs[0].id;
+      const sequenceRef = collectionRef.doc(sequenceId);
+
+      await sequenceRef.update({ favorite: newFavoriteFlag });
+      console.log(`Sequence '${sequenceName}' favorite flag updated successfully`);
+      return { id: sequenceId, name: sequenceName, favorite: newFavoriteFlag };
+    } else {
+      console.log(`Sequence '${sequenceName}' not found`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Error updating favorite flag for sequence '${sequenceName}' in Firestore:`, error);
+    return null;
+  }
+}
+
 module.exports = {
   collections,
   docWithNameExists,
@@ -362,6 +409,8 @@ module.exports = {
   getApiSequencesBySchemaId,
   getApiCallsBySequenceId,
   getNameById,
+  deleteApiCallsBySequenceId,
+  getApiSequenceByName,
+  updateApiSequenceFavorite,
   getSequenceId,
-  deleteApiCallsBySequenceId
 }

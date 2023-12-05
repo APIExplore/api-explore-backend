@@ -12,13 +12,13 @@ router.get('/fetch', async function (req, res, next) {
   }
 
   const schemaName = schemaInfo.name
-  console.log(`fetching all API call sequences of schema '${schemaName}'`)
+  console.log(`Fetching all API call sequences of schema '${schemaName}'`)
 
   const schemaId = await db.getIdByName(db.collections.apiSchemas, schemaName)
   const callSequences = await db.getApiSequencesBySchemaId(schemaId)
   const sequenceNames = []
   for (const sequence of callSequences) {
-    sequenceNames.push({ name: sequence.name })
+    sequenceNames.push({ name: sequence.name, favorite: sequence.favorite })
   }
 
   return res.json(sequenceNames)
@@ -55,5 +55,32 @@ router.get('/fetch/:sequenceName', async function (req, res, next) {
     return res.status(500).json({ error: `Error fetching API call sequence '${sequenceName}'` })
   }
 })
+
+router.put('/toggle-favorite/:sequenceName', async function (req, res, next) {
+  if (!schemaInfo.id || !schemaInfo.name) {
+    console.error('Error: API schema has not been fetched and set');
+    return res.status(400).json({ error: 'API schema has not been fetched and set' });
+  }
+
+  const sequenceName = req.params.sequenceName;
+  console.log(`Toggling favorite for sequence '${sequenceName}'`);
+
+  try {
+    const sequence = await db.getApiSequenceByName(sequenceName, schemaInfo.id);
+    if (!sequence) {
+      return res.status(404).json({ error: `Sequence '${sequenceName}' not found` });
+    }
+
+    const updatedSequence = await db.updateApiSequenceFavorite(sequenceName, !sequence.favorite);
+    if (!updatedSequence) {
+      return res.status(500).json({ error: `Failed to toggle favorite for sequence '${sequenceName}'` });
+    }
+
+    return res.json({ message: `Favorite flag for sequence '${sequenceName}' toggled successfully` });
+  } catch (error) {
+    console.error(`Error toggling favorite for sequence '${sequenceName}':`, error);
+    return res.status(500).json({ error: `Error toggling favorite for sequence '${sequenceName}'` });
+  }
+});
 
 module.exports = router
