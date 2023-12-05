@@ -390,6 +390,45 @@ async function deleteByCollection(collectionName) {
     console.error(`Error deleting collection from Firestore: ${collectionName}`, error);
   }
 }
+// Function to edit the name of a Firestore collection
+async function editCollectionName(oldCollectionName, newCollectionName) {
+  const oldCollectionRef = db.collection(oldCollectionName);
+
+  try {
+    const snapshot = await oldCollectionRef.get();
+    const newCollectionRef = db.collection(newCollectionName);
+
+    snapshot.forEach(async (doc) => {
+      await newCollectionRef.doc(doc.id).set(doc.data());
+      await doc.ref.delete();
+    });
+
+    console.log(`Collection name updated: ${oldCollectionName} -> ${newCollectionName}`);
+  } catch (error) {
+    console.error(`Error updating collection name: ${error}`);
+  }
+}
+
+// Function to edit the name of a Firestore document within a collection
+async function editDocumentName(collectionName, oldDocumentName, newDocumentName) {
+  const collectionRef = db.collection(collectionName);
+
+  try {
+    const docSnapshot = await collectionRef.doc(oldDocumentName).get();
+
+    if (docSnapshot.exists) {
+      await collectionRef.doc(newDocumentName).set(docSnapshot.data());
+
+      await collectionRef.doc(oldDocumentName).delete();
+
+      console.log(`Document name updated in collection ${collectionName}: ${oldDocumentName} -> ${newDocumentName}`);
+    } else {
+      console.log(`Document not found in collection ${collectionName}: ${oldDocumentName}`);
+    }
+  } catch (error) {
+    console.error(`Error updating document name: ${error}`);
+  }
+}
 
 // Print progress bar when uploading API calls to DB
 function printProgressBar (total, count) {
@@ -460,9 +499,11 @@ module.exports = {
   getApiCallsBySequenceId,
   getNameById,
   deleteById,
-  deleteByCollection,
   deleteApiCallsBySequenceId,
   getApiSequenceByName,
   updateApiSequenceFavorite,
   getSequenceId,
+  deleteByCollection,
+  editCollectionName,
+  editDocumentName
 }
