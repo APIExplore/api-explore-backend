@@ -342,6 +342,55 @@ async function deleteApiCallsBySequenceId (sequenceId) {
   }
 }
 
+// Function to delete a specific API call/schema/sequence, the inputs are the API call/schema/sequence name and the record ID
+async function deleteById(collectionName, documentId) {
+  const collectionRef = db.collection(collectionName);
+
+  try {
+    const docRef = collectionRef.doc(documentId);
+    const docSnapshot = await docRef.get();
+
+    if (docSnapshot.exists) {
+      await docRef.delete();
+      console.log(`Document deleted from Firestore. Collection: ${collectionName}, Document ID: ${documentId}`);
+    } else {
+      console.log(`Document does not exist or not found. Collection: ${collectionName}, Document ID: ${documentId}`);
+    }
+  } catch (error) {
+    console.error(`Error deleting document from Firestore. Collection: ${collectionName}, Document ID: ${documentId}`, error);
+  }
+}
+
+// Function to delete API call/schema/sequence and all the related records
+async function deleteByCollection(collectionName) {
+  const collectionRef = db.collection(collectionName);
+  try {
+
+    const querySnapshot = await collectionRef.get();
+
+    const batch = db.batch();
+    querySnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+
+    console.log(`Documents deleted from Firestore collection: ${collectionName}`);
+
+    await collectionRef.get().then(snapshot => {
+      if (snapshot.size > 0) {
+        console.log(`Error: Documents still exist in collection: ${collectionName}`);
+      } else {
+        console.log(`Collection does not contain any documents. Deleting collection: ${collectionName}`);
+        collectionRef.delete();
+        console.log(`Collection deleted from Firestore: ${collectionName}`);
+      }
+    });
+  } catch (error) {
+    console.error(`Error deleting collection from Firestore: ${collectionName}`, error);
+  }
+}
+
 // Print progress bar when uploading API calls to DB
 function printProgressBar (total, count) {
   const percentage = Math.round((count / total) * 100)
@@ -410,6 +459,8 @@ module.exports = {
   getApiSequencesBySchemaId,
   getApiCallsBySequenceId,
   getNameById,
+  deleteById,
+  deleteByCollection,
   deleteApiCallsBySequenceId,
   getApiSequenceByName,
   updateApiSequenceFavorite,
