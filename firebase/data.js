@@ -2,7 +2,7 @@ const { v4: generateId } = require('uuid')
 
 const { db } = require('../firebase/config')
 
-const collections = { apiSchemas: 'api_schemas', apiCallSequences: 'api_call_sequences', apiCalls: 'api_calls' }
+const collections = { apiSchemas: 'test_api_schemas', apiCallSequences: 'test_api_call_sequences', apiCalls: 'test_api_calls' }
 
 // Function to create a Firestore collection (in our case: api_calls, api_sequences or api_schemas collections)
 async function createCollection (collectionName) {
@@ -17,7 +17,7 @@ async function createCollection (collectionName) {
 
 // Function for uploading a sequence of API calls to Firebase
 async function uploadApiCallSequence (collectionName, sequenceId, apiCalls) {
-  console.log(' - Uploading call sequence to firebase...')
+  console.log('Uploading call sequence to firebase...')
   const total = apiCalls.length
   let count = 0
 
@@ -26,6 +26,7 @@ async function uploadApiCallSequence (collectionName, sequenceId, apiCalls) {
     const data = {
       operationId: apiCall.operationId,
       method: apiCall.method,
+      url: apiCall.url,
       endpoint: apiCall.endpoint,
       parameters: apiCall.parameters,
       requestBody: apiCall.requestBody,
@@ -42,7 +43,7 @@ async function uploadApiCallSequence (collectionName, sequenceId, apiCalls) {
 
 // Function to create or update a sequence for a specific API schema
 async function addApiCallSequence (apiSchemaId, sequenceId, sequenceName) {
-  const apiCallSequencesCollectionRef = db.collection('api_call_sequences')
+  const apiCallSequencesCollectionRef = db.collection(collections.apiCallSequences)
 
   try {
     const docRef = apiCallSequencesCollectionRef.doc(sequenceId)
@@ -59,7 +60,7 @@ async function addApiCallSequence (apiSchemaId, sequenceId, sequenceName) {
 
 // Function to create or update an API schema
 async function addApiSchema (apiSchemaId, apiSchema, name) {
-  const apiSchemasCollectionRef = db.collection('api_schemas')
+  const apiSchemasCollectionRef = db.collection(collections.apiSchemas)
 
   try {
     const docRef = apiSchemasCollectionRef.doc(apiSchemaId)
@@ -298,7 +299,9 @@ async function getApiCallsBySequenceId (sequenceId) {
   const collectionRef = db.collection(collectionName)
 
   try {
-    const querySnapshot = await collectionRef.where('sequenceId', '==', sequenceId).get()
+    const querySnapshot = await collectionRef
+      .where('sequenceId', '==', sequenceId)
+      .get()
     const apiCalls = []
 
     querySnapshot.forEach((doc) => {
@@ -306,10 +309,35 @@ async function getApiCallsBySequenceId (sequenceId) {
       apiCalls.push(apiCall)
     })
 
-    return apiCalls
+    return apiCalls.sort((a, b) => new Date(a.date) - new Date(b.date))
   } catch (error) {
     console.error('Error getting API calls by sequenceId in Firestore:', error)
     return []
+  }
+}
+
+async function deleteApiCallsBySequenceId (sequenceId) {
+  console.log('Deleting previous call sequence...')
+
+  const collectionName = collections.apiCalls
+  const collectionRef = db.collection(collectionName)
+
+  try {
+    const querySnapshot = await collectionRef
+      .where('sequenceId', '==', sequenceId)
+      .get()
+
+    const batch = db.batch()
+    querySnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref)
+    })
+
+    await batch.commit()
+
+    return true
+  } catch (error) {
+    console.error(` - Failed to delete API calls of sequence ID '${sequenceId}'`)
+    return false
   }
 }
 
@@ -334,5 +362,6 @@ module.exports = {
   getApiSequencesBySchemaId,
   getApiCallsBySequenceId,
   getNameById,
-  getSequenceId
+  getSequenceId,
+  deleteApiCallsBySequenceId
 }

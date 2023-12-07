@@ -133,7 +133,13 @@ Same as [Fetch API Schema by Name from DB (mocked)](#Fetch-API-Schema-by-Name-fr
 
 ### Random Exploration
 
-You can initiate random exploration by sending a `POST` request to `/explore/random`, after setting or fetching an API schema, then providing a call sequence name and a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase. If an existing sequence name is used, the calls will be added to that sequence, otherwise a new one is created on the database.
+You can initiate random exploration by sending a `POST` request to `/explore/random`, after setting or fetching an API schema, then providing a call sequence name and a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will sent back in the response body (and via socket), then uploaded on Firebase. If an existing sequence name is used, the previous calls will be overwritten in database, otherwise a new sequence is created.
+
+The response body may contain a `warnings` array, providing information on changes in responses from when the sequence was previously executed:
+  - If status has changed, the specific call which changed will be reported along with how the status changed.
+  - If the response data changed, it will only be reported that it changed, not what changed (May update info later).
+  - If a call in the sequence was changed to another one, the old and new operation IDs will be displayed.
+  - If the length of the call sequence was changed, the difference in length will be reported (nothing else will be reported in this case).
 
 #### Request
 
@@ -178,6 +184,10 @@ Upon a successful request, status `200`, details on the API call can be found in
       }
     },
     ...
+  ],
+  "warnings": [
+    { "warning": "Response status of API call #1 'getProductByName' has changed from '200' to '500'" },
+    ...
   ]
 }
 ```
@@ -221,7 +231,13 @@ The JSON structure of each API call received over the socket would be:
 
 ### Exploration
 
-Exporation can be initiated by sending a POST request to `/explore`, after fetching and setting an API schema, then providing a set of operations to run in the request body (including parameter values) as well as the call sequence name. Once the call sequence has finished, all calls along with response data will be uploaded on Firebase. If an existing sequence name is used, the calls will be added to that sequence, otherwise a new one is created on the database.
+Exporation can be initiated by sending a POST request to `/explore`, after fetching and setting an API schema, then providing a set of operations to run in the request body (including parameter values) as well as the call sequence name. Once the call sequence has finished, all calls along with response data will sent back in the response body (and via socket), then uploaded on Firebase. If an existing sequence name is used, the previous calls will be overwritten in database, otherwise a new sequence is created.
+
+The response body may contain a `warnings` array, providing information on changes in responses from when the sequence was previously executed:
+  - If status has changed, the specific call which changed will be reported along with how the status changed.
+  - If the response data changed, it will only be reported that it changed, not what changed (May update info later).
+  - If a call in the sequence was changed to another one, the old and new operation IDs will be displayed.
+  - If the length of the call sequence was changed, the difference in length will be reported (nothing else will be reported in this case).
 
 #### Request
 
