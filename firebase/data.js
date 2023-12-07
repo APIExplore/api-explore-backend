@@ -49,7 +49,8 @@ async function addApiCallSequence (apiSchemaId, sequenceId, sequenceName) {
     const docRef = apiCallSequencesCollectionRef.doc(sequenceId)
     await docRef.set({
       apiSchemaId,
-      name: sequenceName
+      name: sequenceName,
+      favorite: false
     })
 
     console.log('API Call Sequence added or updated to Firestore with ID:', sequenceId)
