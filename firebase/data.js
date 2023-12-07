@@ -343,7 +343,7 @@ async function deleteApiCallsBySequenceId (sequenceId) {
 }
 
 // Function to delete a specific API call/schema/sequence, the inputs are the API call/schema/sequence name and the record ID
-async function deleteById(collectionName, documentId) {
+async function deleteBySequenceId(collectionName, documentId) {
   const collectionRef = db.collection(collectionName);
 
   try {
@@ -362,7 +362,7 @@ async function deleteById(collectionName, documentId) {
 }
 
 // Function to delete API call/schema/sequence and all the related records
-async function deleteByCollection(collectionName) {
+async function deleteBySchema(collectionName) {
   const collectionRef = db.collection(collectionName);
   try {
 
@@ -372,11 +372,8 @@ async function deleteByCollection(collectionName) {
     querySnapshot.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
-
     await batch.commit();
-
     console.log(`Documents deleted from Firestore collection: ${collectionName}`);
-
     await collectionRef.get().then(snapshot => {
       if (snapshot.size > 0) {
         console.log(`Error: Documents still exist in collection: ${collectionName}`);
@@ -390,6 +387,29 @@ async function deleteByCollection(collectionName) {
     console.error(`Error deleting collection from Firestore: ${collectionName}`, error);
   }
 }
+
+// Function to delete a sequence and its associated calls
+async function deleteSequenceAndCalls(sequenceId,apiSequence, apiCall) {
+  const sequenceRef = db.collection(apiSequence).doc(sequenceId);
+  const callsRef = db.collection(apiCall);
+  
+  try {
+    // Delete the sequence
+    await sequenceRef.delete();
+    console.log(`Sequence deleted: ${sequenceId}`);
+    // Delete associated calls
+    const callsQuerySnapshot = await callsRef.where('sequenceId', '==', sequenceId).get();
+    const batch = db.batch();
+    callsQuerySnapshot.forEach((callDoc) => {
+      batch.delete(callDoc.ref);
+    });
+    await batch.commit();
+    console.log(`Associated calls deleted for sequence: ${sequenceId}`);
+  } catch (error) {
+    console.error(`Error deleting sequence and associated calls: ${sequenceId}`, error);
+  }
+}
+
 // Function to edit the name of a Firestore collection
 async function editCollectionName(oldCollectionName, newCollectionName) {
   const oldCollectionRef = db.collection(oldCollectionName);
@@ -409,18 +429,15 @@ async function editCollectionName(oldCollectionName, newCollectionName) {
   }
 }
 
-// Function to edit the name of a Firestore document within a collection
+/*// Function to edit the name of a Firestore document within a collection
 async function editDocumentName(collectionName, oldDocumentName, newDocumentName) {
   const collectionRef = db.collection(collectionName);
 
   try {
     const docSnapshot = await collectionRef.doc(oldDocumentName).get();
-
     if (docSnapshot.exists) {
       await collectionRef.doc(newDocumentName).set(docSnapshot.data());
-
       await collectionRef.doc(oldDocumentName).delete();
-
       console.log(`Document name updated in collection ${collectionName}: ${oldDocumentName} -> ${newDocumentName}`);
     } else {
       console.log(`Document not found in collection ${collectionName}: ${oldDocumentName}`);
@@ -428,7 +445,7 @@ async function editDocumentName(collectionName, oldDocumentName, newDocumentName
   } catch (error) {
     console.error(`Error updating document name: ${error}`);
   }
-}
+}*/
 
 // Print progress bar when uploading API calls to DB
 function printProgressBar (total, count) {
@@ -498,12 +515,12 @@ module.exports = {
   getApiSequencesBySchemaId,
   getApiCallsBySequenceId,
   getNameById,
-  deleteById,
+  deleteBySchema,
+  deleteSequenceAndCalls,
+  editCollectionName,
+  deleteBySequenceId,
   deleteApiCallsBySequenceId,
   getApiSequenceByName,
   updateApiSequenceFavorite,
   getSequenceId,
-  deleteByCollection,
-  editCollectionName,
-  editDocumentName
 }
