@@ -5,7 +5,6 @@
 const express = require('express')
 const router = express.Router()
 const axios = require('axios')
-const { v4: generateId } = require('uuid')
 
 // const validateApiSchema = require('../utils/validators/apiSchemaV2Validator')
 const { readApiSchema, writeApiSchema } = require('../utils/apiSchemaUtils')
@@ -32,11 +31,17 @@ router.get('/fetch', async function (req, res, next) {
 // Fetch schema with name from DB
 router.get('/fetch/:schemaName', async function (req, res, next) {
   const schemaName = req.params.schemaName
+  if (!schemaName || schemaName.trim() === '') {
+    console.log('Fetching API schema...')
+    console.error(' - Error: no name specified for the schema')
+    return res.status(400).json({ error: 'No API schema name specified' })
+  }
+
   console.log(`Fetching API schema '${schemaName}'...`)
 
   try {
     // Check if schema by name exists
-    if (await db.docWithNameExists(db.collections.apiSchemas, schemaName)) {
+    if (await db.apiSchemaExists(schemaName)) {
       // Fetch schema from DB
       const apiSchemaData = await db.getApiInfoByName(db.collections.apiSchemas, schemaName)
       if (!apiSchemaData) {
@@ -79,13 +84,11 @@ router.get('/fetch/:schemaName', async function (req, res, next) {
 
 // Common function for fetching and setting API schema
 async function setApiSchema (req, res, next, isUpload) {
-  // Ensure the request body has a name property (for the schema)
-  if (!req.body.name) {
+  const schemaName = req.body.name
+  if (!schemaName || schemaName.trim() === '') {
     console.error(' - Error: no name specified for the schema')
     return res.status(400).json({ error: 'No API schema name specified' })
   }
-
-  const schemaName = req.body.name.trim()
 
   try {
     let apiSchema
@@ -141,25 +144,9 @@ async function setApiSchema (req, res, next, isUpload) {
       return res.status(400).json({ error: 'Failed to get API schema properties, ensure a correct API schema was provided' })
     }
 
-    let schemaId = null
+    await db.addApiSchema(apiSchema, schemaName)
 
-    // Check if schema name exists in DB
-    const existsInDb = await db.docWithNameExists(db.collections.apiSchemas, schemaName)
-    if (!existsInDb) {
-      console.log(' - New schema, uploading to DB')
-      schemaId = generateId()
-      db.addApiSchema(schemaId, apiSchema, schemaName)
-    } else {
-      schemaId = await db.getIdByName(db.collections.apiSchemas, schemaName)
-
-      if (!schemaId) {
-        return res.status(500).json({ error: 'Failed to get API schema ID from DB' })
-      }
-
-      console.log(' - Schema already exists in DB')
-    }
-
-    schemaInfo.id = schemaId
+    schemaInfo.id = await db.getIdByName(db.collections.apiSchemas, schemaName)
     schemaInfo.name = schemaName
 
     console.log(' - Paths, methods and definitions sent in request body')
@@ -189,6 +176,75 @@ router.post('/set', async function (req, res, next) {
 
     return setApiSchema(req, res, next, true)
   })
+})
+
+router.put('/rename/:schemaName/:newSchemaName', async function (req, res, next) {
+  const schemaName = req.params.schemaName
+  const newSchemaName = req.params.newSchemaName
+  if (!schemaName || !newSchemaName || schemaName.trim() === '' || newSchemaName.trim() === '') {
+    console.log('Renaming API schema...')
+    console.error(' - Error: no name specified for the schema')
+    return res.status(400).json({ error: 'No API schema name specified' })
+  }
+
+  console.log(`Renaming API schema '${schemaName}' to '${newSchemaName}'...`)
+
+  try {
+    // Check if schema by name exists
+    if (await db.apiSchemaExists(schemaName)) {
+      const schemaId = await db.getIdByName(db.collections.apiSchemas, schemaName)
+      if (!schemaId) {
+        return res.status(500).json({ error: `Failed to get ID of schema '${schemaName}'` })
+      }
+
+      const success = await db.renameApiSchema(schemaId, newSchemaName)
+      if (!success) {
+        return res.status(500).json({ error: `Failed to rename API schema '${schemaName}'` })
+      }
+
+      res.status(201).json({ success: true })
+    } else {
+      console.error(` - Schema '${schemaName}' does not exist `)
+      res.status(404).json({ error: `Schema '${schemaName}' does not exist ` })
+    }
+  } catch (error) {
+    console.error(` - Error renaming schema '${schemaName}':`, error)
+    res.status(500).json({ error: `Error renaming schema '${schemaName}'` })
+  }
+})
+
+router.delete('/delete/:schemaName', async function (req, res, next) {
+  const schemaName = req.params.schemaName
+  if (!schemaName || schemaName.trim() === '') {
+    console.log('Fetching API schema...')
+    console.error(' - Error: no name specified for the schema')
+    return res.status(400).json({ error: 'No API schema name specified' })
+  }
+
+  console.log(`Fetching API schema '${schemaName}'...`)
+
+  try {
+    // Check if schema by name exists
+    if (await db.apiSchemaExists(schemaName)) {
+      const schemaId = await db.getIdByName(db.collections.apiSchemas, schemaName)
+      if (!schemaId) {
+        return res.status(500).json({ error: `Failed to get ID of schema '${schemaName}'` })
+      }
+
+      const success = await db.deleteApiSchema(schemaId)
+      if (!success) {
+        return res.status(500).json({ error: `Failed to delete API schema '${schemaName}'` })
+      }
+
+      res.status(201).json({ success: true })
+    } else {
+      console.error(` - Schema '${schemaName}' does not exist `)
+      res.status(404).json({ error: `Schema '${schemaName}' does not exist ` })
+    }
+  } catch (error) {
+    console.error(` - Error deleting schema '${schemaName}':`, error)
+    res.status(500).json({ error: `Error deleting schema '${schemaName}'` })
+  }
 })
 
 module.exports = { router, schemaInfo }

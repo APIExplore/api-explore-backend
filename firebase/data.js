@@ -59,19 +59,34 @@ async function addApiCallSequence (apiSchemaId, sequenceId, sequenceName) {
 }
 
 // Function to create or update an API schema
-async function addApiSchema (apiSchemaId, apiSchema, name) {
+async function addApiSchema (schema, schemaName) {
   const apiSchemasCollectionRef = db.collection(collections.apiSchemas)
 
   try {
-    const docRef = apiSchemasCollectionRef.doc(apiSchemaId)
-    await docRef.set({
-      apiSchema,
-      name
-    })
+    await db.runTransaction(async (transaction) => {
+      const schemaId = generateId()
 
-    console.log('API Schema added or updated in Firestore with ID:', apiSchemaId)
+      // Check if a schema with the provided name already exists within the transaction
+      const existingSchema = await transaction.get(apiSchemasCollectionRef.where('name', '==', schemaName).limit(1))
+
+      if (!existingSchema.empty) {
+        console.log(` - A schema with the name '${schemaName}' already exists. Cannot add a duplicate.`)
+        return false
+      }
+
+      // If no duplicate is found, proceed to add or update the schema
+      const docRef = apiSchemasCollectionRef.doc(schemaId)
+      transaction.set(docRef, {
+        apiSchema: schema,
+        name: schemaName
+      })
+
+      console.log(' - API Schema added to Firestore with ID:', schemaId)
+      return false
+    })
   } catch (error) {
-    console.error('Error adding or updating API Schema in Firestore:', error)
+    console.error(' - Error adding or updating API Schema in Firestore:', error)
+    return true
   }
 }
 
@@ -127,31 +142,18 @@ async function getApiInfoByName (collectionName, documentName) {
   }
 }
 
-// Check if document with property name exists in collection
-async function docWithNameExists (collectionName, name) {
-  const collectionRef = db.collection(collectionName)
+// Check if schema with property name exists in collection
+async function apiSchemaExists (schemaName) {
+  const collectionRef = db.collection(collections.apiSchemas)
 
   try {
-    const querySnapshot = await collectionRef.where('name', '==', name).get()
+    const querySnapshot = await collectionRef
+      .where('name', '==', schemaName)
+      .get()
 
-    // Check if any documents match the query
     return !querySnapshot.empty
   } catch (error) {
-    switch (collectionName) {
-      case collections.apiSchemas:
-        console.error('Error checking if API Schema exists in Firestore:', error)
-        break
-      case collections.apiCallSequences:
-        console.error('Error checking if API call sequence exists in Firestore:', error)
-        break
-      case collections.apiCalls:
-        console.error('Error checking if API call exists in Firestore:', error)
-        break
-      default:
-        console.error(`Error checking if name exists in DB collection '${collectionName}'`, error)
-        break
-    }
-
+    console.error('Error checking if API Schema exists in Firestore:', error)
     return false
   }
 }
@@ -299,12 +301,12 @@ async function getApiCallsBySequenceId (sequenceId) {
   const collectionRef = db.collection(collectionName)
 
   try {
-    const querySnapshot = await collectionRef
+    const callsSnapshot = await collectionRef
       .where('sequenceId', '==', sequenceId)
       .get()
     const apiCalls = []
 
-    querySnapshot.forEach((doc) => {
+    callsSnapshot.forEach((doc) => {
       const apiCall = doc.data()
       apiCalls.push(apiCall)
     })
@@ -316,19 +318,19 @@ async function getApiCallsBySequenceId (sequenceId) {
   }
 }
 
-async function deleteApiCallsBySequenceId (sequenceId) {
-  console.log('Deleting previous call sequence...')
-
-  const collectionName = collections.apiCalls
-  const collectionRef = db.collection(collectionName)
+// Function for deleting all API calls of a squence
+async function deleteApiCalls (sequenceId) {
+  console.log(`Deleting calls of sequence '${sequenceId}'...`)
+  const callsRef = db.collection(collections.apiCalls)
 
   try {
-    const querySnapshot = await collectionRef
+    const callsSnapshot = await callsRef
       .where('sequenceId', '==', sequenceId)
       .get()
 
     const batch = db.batch()
-    querySnapshot.docs.forEach((doc) => {
+
+    callsSnapshot.docs.forEach((doc) => {
       batch.delete(doc.ref)
     })
 
@@ -336,7 +338,115 @@ async function deleteApiCallsBySequenceId (sequenceId) {
 
     return true
   } catch (error) {
-    console.error(` - Failed to delete API calls of sequence ID '${sequenceId}'`)
+    console.error(` - Error deleting API calls of sequence '${sequenceId}':`, error.message)
+    return false
+  }
+}
+
+// Function for deleting a call sequence and its associated calls
+async function deleteCallSequence (sequenceId) {
+  console.log(`Deleting call sequence '${sequenceId}'...`)
+  const sequenceRef = db.collection(collections.apiCallSequences).doc(sequenceId)
+  const callsRef = db.collection(collections.apiCalls)
+
+  try {
+    const callsSnapshot = await callsRef
+      .where('sequenceId', '==', sequenceId)
+      .get()
+
+    const batch = db.batch()
+
+    // Delete all calls of the sequence
+    callsSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref)
+    })
+
+    // Delete the sequence
+    await sequenceRef.delete()
+
+    await batch.commit()
+    console.log(` - Successfully deleted sequence '${sequenceId}', and associated calls`)
+
+    return true
+  } catch (error) {
+    console.error(` - Error deleting sequence '${sequenceId}' and associated calls:`, error.message)
+    return false
+  }
+}
+
+// Function for deleting an API schema and its associated sequences/calls
+async function deleteApiSchema (apiSchemaId) {
+  console.log(`Deleting API schema '${apiSchemaId}'...`)
+
+  const schemaRef = db.collection(collections.apiSchemas).doc(apiSchemaId)
+  const sequencesRef = db.collection(collections.apiCallSequences)
+  const callsRef = db.collection(collections.apiCalls)
+
+  try {
+    const sequencesSnapshot = await sequencesRef
+      .where('apiSchemaId', '==', apiSchemaId)
+      .get()
+
+    const batch = db.batch()
+
+    for (const doc of sequencesSnapshot.docs) {
+      const sequenceId = doc.id
+      const callsSnapshot = await callsRef
+        .where('sequenceId', '==', sequenceId)
+        .get()
+
+      callsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref)
+      })
+
+      batch.delete(doc.ref)
+    }
+
+    await schemaRef.delete()
+    await batch.commit()
+    console.log(` - Successfully deleted API schema ${apiSchemaId}, and associated sequences/calls`)
+
+    return true
+  } catch (error) {
+    console.error(` - Error deleting API schema ${apiSchemaId}, and associated sequences/calls:`, error.message)
+    return false
+  }
+}
+
+// Function for renaming a call sequence
+async function renameCallSequence (sequenceId, newName) {
+  console.log(`Renaming sequence '${sequenceId}'...`)
+
+  const sequencesRef = db.collection(collections.apiCallSequences).doc(sequenceId)
+
+  try {
+    await sequencesRef.update({
+      name: newName
+    })
+
+    console.log(`Sequence '${sequenceId}' successfully renamed to '${newName}'.`)
+    return true
+  } catch (error) {
+    console.error(`- Error renaming sequence '${sequenceId}':`, error)
+    return false
+  }
+}
+
+// Function for renaming an API schema
+async function renameApiSchema (schemaId, newName) {
+  console.log(`Renaming sequence '${schemaId}'...`)
+
+  const schemaRef = db.collection(collections.apiSchemas).doc(schemaId)
+
+  try {
+    await schemaRef.update({
+      name: newName
+    })
+
+    console.log(`Sequence '${schemaId}' successfully renamed to '${newName}'.`)
+    return true
+  } catch (error) {
+    console.error(`- Error renaming sequence '${schemaId}':`, error)
     return false
   }
 }
@@ -351,7 +461,7 @@ function printProgressBar (total, count) {
 
 module.exports = {
   collections,
-  docWithNameExists,
+  apiSchemaExists,
   docWithNameAndSchemaIdExists,
   addApiSchema,
   addApiCallSequence,
@@ -363,5 +473,9 @@ module.exports = {
   getApiCallsBySequenceId,
   getNameById,
   getSequenceId,
-  deleteApiCallsBySequenceId
+  deleteApiCalls,
+  deleteCallSequence,
+  deleteApiSchema,
+  renameCallSequence,
+  renameApiSchema
 }

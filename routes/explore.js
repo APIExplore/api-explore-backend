@@ -52,7 +52,7 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
     prevCalls = await db.getApiCallsBySequenceId(sequenceId)
 
     // Delete previous calls from DB
-    const success = await db.deleteApiCallsBySequenceId(sequenceId)
+    const success = await db.deleteApiCalls(sequenceId)
     if (success) {
       console.log(' - Previous sequence deleted successfully')
     } else {

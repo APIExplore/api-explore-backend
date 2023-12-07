@@ -332,3 +332,83 @@ A JSON encoded array with all API calls in the sequence:
   ...
 ]
 ```
+
+### Edit API schema name
+
+Changes the name of an existing schema on the database.
+
+#### Request
+
+Send a `PUT` request to `/apischema/rename/:schemaName/:newSchemaName`.
+
+#### Response
+
+When successfully renaming a call sequence:
+```json
+{ "success": true }
+```
+If any issues are encountered:
+```json
+{ "error": "message" }
+```
+
+### Edit call sequence name
+
+Changes the name of an existing call sequence on the database.
+
+`Note:` Can only be used for changing the name of a sequence belonging to the currently selected schema.
+
+#### Request
+
+Send a `PUT` request to `/callsequence/rename/:sequenceName/:newSequenceName`.
+
+#### Response
+
+When successfully renaming a call sequence:
+```json
+{ "success": true }
+```
+If any issues are encountered:
+```json
+{ "error": "message" }
+```
+
+### Delete API schema
+
+Deletes an API schema along with all of its call sequences and their corresponding API calls.
+
+#### Request
+
+Send a `DELETE` request to `/apischema/delete/:schemaName`.
+
+#### Response
+
+When successfully deleting an API schema:
+```json
+{ "success": true }
+```
+If any issues are encountered:
+```json
+{ "error": "message" }
+```
+
+### Delete API call sequence
+
+Deletes an API call sequence along with all of its corresponding API calls.
+
+#### Request
+
+Send a `DELETE` request to `/callsequence/delete/:sequenceName`.
+
+`Note:` Can only be used for deleting a sequence belonging to the currently selected schema.
+
+#### Response
+
+When successfully deleting an API call sequence:
+```json
+{ "success": true }
+```
+If any issues are encountered:
+```json
+{ "error": "message" }
+```
