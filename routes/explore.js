@@ -31,6 +31,23 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
     return res.status(400).json({ error: 'Invalid API call sequence in request data' })
   }
 
+  // Set the endpoint parameters and prepare necessary data to make calls (will return null on error, e.g, if active schema do not match)
+  const apiCalls = buildApiCallsFn(req.body.callSequence)
+  if (!apiCalls) {
+    return res.status(400).json({ error: 'Error building API calls (make sure that the correct schema is set)' })
+  }
+
+  // Send calls to SUT
+  const responseObj = { callSequence: [] }
+  for (const apiCall of apiCalls) {
+    const response = await sendApiCallToSut(apiCall)
+    if (!response) {
+      return res.status(500).json({ error: 'Cannot connect to the SUT, ensure the correct SUT is running and that the correct schema is used' })
+    }
+    sendApiCallOverSocket(response)
+    responseObj.callSequence.push(response)
+  }
+
   // Check if sequence name exists in DB for current schema
   let sequenceId = null
   let prevCalls
@@ -59,23 +76,6 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
       return res.status(500).json({ error: `Failed to delete previous API calls in sequence '${sequenceName}'` })
     }
     console.log('Resuming exploration...')
-  }
-
-  // Set the endpoint parameters and prepare necessary data to make calls (will return null on error, e.g, if active schema do not match)
-  const apiCalls = buildApiCallsFn(req.body.callSequence)
-  if (!apiCalls) {
-    return res.status(400).json({ error: 'Error building API calls (make sure that the correct schema is set)' })
-  }
-
-  // Send calls to SUT
-  const responseObj = { callSequence: [] }
-  for (const apiCall of apiCalls) {
-    const response = await sendApiCallToSut(apiCall)
-    if (!response) {
-      return res.status(500).json({ error: 'Cannot connect to the SUT, ensure the correct SUT is running and that the correct schema is used' })
-    }
-    sendApiCallOverSocket(response)
-    responseObj.callSequence.push(response)
   }
 
   // If the sequence has previous call data, compare and report changes.
