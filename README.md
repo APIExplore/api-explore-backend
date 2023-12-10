@@ -8,8 +8,10 @@ Install dependencies by running `yarn install`
 
 ## Usage
 
-1. Make sure the SUT (e.g., feature-service) is running in the background
-2. Start the application: `node app.js`
+1. Start the application: `node app.js`
+2. Make sure a suitable SUT is running in the background
+3. Set or fetch the schema corresponding to the SUT
+4. Start exploring...
 
 ## Tested APIs
 
@@ -131,109 +133,20 @@ Send a POST request to `/apiSchema/set` with a multipart/form-data payload conta
 #### Response
 Same as [Fetch API Schema by Name from DB (mocked)](#Fetch-API-Schema-by-Name-from-DB-(mocked)/response) with status `201`
 
-### Random Exploration
-
-You can initiate random exploration by sending a `POST` request to `/explore/random`, after setting or fetching an API schema, then providing a call sequence name and a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will sent back in the response body (and via socket), then uploaded on Firebase. If an existing sequence name is used, the previous calls will be overwritten in database, otherwise a new sequence is created.
-
-The response body may contain a `warnings` array, providing information on changes in responses from when the sequence was previously executed:
-  - If status has changed, the specific call which changed will be reported along with how the status changed.
-  - If the response data changed, it will only be reported that it changed, not what changed (May update info later).
-  - If a call in the sequence was changed to another one, the old and new operation IDs will be displayed.
-  - If the length of the call sequence was changed, the difference in length will be reported (nothing else will be reported in this case).
-
-#### Request
-
-Send a `POST` request to `/explore/random` with  JSON data in the request body following a similar structure to:
-
-```json
-{
-  "name": "random-exploration",
-  "callSequence": [
-    {
-      "path": "/products/{productName}/features",
-      "method": "get"
-    },
-    ...
-  ]
-}
-```
-#### Response
-Currently all API call data is sent in the response body (to be changed later).
-Upon a successful request, status `200`, details on the API call can be found in the request body, e.g.,:
-```json
-{
-  "callSequence": [
-    {
-      "url": "http://localhost:8080/products/gx8h9/configurations",
-      "operationId": "getConfigurationsForProduct",
-      "method": "get",
-      "endpoint": "/products/{productName}/configurations",
-      "parameters": [
-        {
-          "type": "string",
-          "name": "productName",
-          "value": "gx8h9"
-        }
-      ],
-      "requestBody": {},
-      "date": "Wed, 8 Nov 2023 10:57:23:752",
-      "response": {
-        "status": 200,
-        "date": "Wed, 8 Nov 2023 10:57:23:760",
-        "data": []
-      }
-    },
-    ...
-  ],
-  "warnings": [
-    { "warning": "Response status of API call #1 'getProductByName' has changed from '200' to '500'" },
-    ...
-  ]
-}
-```
-You can also receive individual API calls as the they are being made and a response is received from the SUT through `Socket.io` ('https://socket.io/').
-The socket is setup on the backend like this:
-```javascript
-const io = new Server(process.env.SOCKET || '3001')
-io.on('connection', (socket) => {})
-socket.emit('apiCall', apiCall)
-```
-The socket is event-based and will trigger it's corresponding function each time a call is emitted. Example of logging each call (frontend):
-```javascript
-const socket = io('http://localhost:3001')
-socket.on('apiCall', (apiCall) => {
-  console.log(apiCall)
-})
-```
-The JSON structure of each API call received over the socket would be:
-```json
-{
-  "url": "http://localhost:8080/products/gx8h9/configurations",
-  "operationId": "getConfigurationsForProduct",
-  "method": "get",
-  "endpoint": "/products/{productName}/configurations",
-  "parameters": [
-    {
-      "type": "string",
-      "name": "productName",
-      "value": "gx8h9"
-    }
-  ],
-  "requestBody": {},
-  "date": "Wed, 8 Nov 2023 10:57:23:752",
-  "response": {
-    "status": 200,
-    "date": "Wed, 8 Nov 2023 10:57:23:760",
-    "data": []
-  }
-}
-```
-
 ### Exploration
 
 Exporation can be initiated by sending a POST request to `/explore`, after fetching and setting an API schema, then providing a set of operations to run in the request body (including parameter values) as well as the call sequence name. Once the call sequence has finished, all calls along with response data will sent back in the response body (and via socket), then uploaded on Firebase. If an existing sequence name is used, the previous calls will be overwritten in database, otherwise a new sequence is created.
 
-The response body may contain a `warnings` array, providing information on changes in responses from when the sequence was previously executed:
+The response body contains a `metrics` object listing various call sequence metrics:
+  - `numCalls`: Total number of calls
+  - `successfulCalls`: Number of successful requests (`status < 400`)
+  - `unsuccessfulCalls`: Number of unsuccessful calls (`status >= 400`)
+  - `totDuration`: Total duration of all requests
+  - `avgDuration`: Average duration of each request
+  - `totSize`: Combined size of all responses
+  - `avgSize`: Average size of each response
+
+The response body may also contain a `warnings` array, providing information on changes in responses from when the sequence was previously executed:
   - If status has changed, the specific call which changed will be reported along with how the status changed.
   - If the response data changed, it will only be reported that it changed, not what changed (May update info later).
   - If a call in the sequence was changed to another one, the old and new operation IDs will be displayed.
@@ -265,7 +178,111 @@ Send a `POST` request to `/explore` with JSON data in the request body following
 
 #### Response
 
-Same as [Random Exploration](#Random-Exploration/response)
+Currently all API call data is sent in the response body (to be changed later).
+Upon a successful request, status `200`, details on the API call can be found in the request body, e.g.,:
+```json
+{
+  "callSequence": [
+    {
+      "url": "http://localhost:8080/products",
+      "operationId": "getAllProducts",
+      "method": "get",
+      "endpoint": "/products",
+      "parameters": [],
+      "requestBody": {
+        "formData": {}
+      },
+      "date": "Sun, 10 Dec 2023 20:48:17:886",
+      "response": {
+        "status": 200,
+        "date": "Sun, 10 Dec 2023 20:48:17:918",
+        "contentType": "application/json",
+        "data": [
+          "ELEARNING_SITE"
+        ],
+        "size": 18
+      },
+      "duration": 32,
+      "relationships": {
+        "responseInequality": [
+          "start"
+        ],
+        "stateMutation": [
+          "start"
+        ],
+        "stateIdentity": [
+          "start"
+        ]
+      }
+    }
+  ],
+  "metrics": {
+    "numCalls": 1,
+    "successfulCalls": 1,
+    "unsuccessfulCalls": 0,
+    "totDuration": 32,
+    "avgDuration": 32,
+    "totSize": 18,
+    "avgSize": 18
+  },
+  "warnings": [
+    { "warning": "message" }
+  ],
+}
+```
+You can also receive individual API calls as the they are being made and a response is received from the SUT through `Socket.io` ('https://socket.io/').
+The socket is setup on the backend like this:
+```javascript
+const io = new Server(process.env.SOCKET || '3001')
+io.on('connection', (socket) => {})
+socket.emit('apiCall', apiCall)
+```
+The socket is event-based and will trigger it's corresponding function each time a call is emitted. Example of logging each call (frontend):
+```javascript
+const socket = io('http://localhost:3001')
+socket.on('apiCall', (apiCall) => {
+  console.log(apiCall)
+})
+```
+
+### Random Exploration
+
+You can initiate random exploration by sending a `POST` request to `/explore/random`, after setting or fetching an API schema, then providing a call sequence name and a set of operations to run in the request body. Once the call sequence has finished, all calls along with response data will sent back in the response body (and via socket), then uploaded on Firebase. If an existing sequence name is used, the previous calls will be overwritten in database, otherwise a new sequence is created.
+
+The response body contains a `metrics` object listing various call sequence metrics:
+  - `numCalls`: Total number of calls
+  - `successfulCalls`: Number of successful requests (`status < 400`)
+  - `unsuccessfulCalls`: Number of unsuccessful calls (`status >= 400`)
+  - `totDuration`: Total duration of all requests
+  - `avgDuration`: Average duration of each request
+  - `totSize`: Combined size of all responses
+  - `avgSize`: Average size of each response
+
+The response body may also contain a `warnings` array, providing information on changes in responses from when the sequence was previously executed:
+  - If status has changed, the specific call which changed will be reported along with how the status changed.
+  - If the response data changed, it will only be reported that it changed, not what changed (May update info later).
+  - If a call in the sequence was changed to another one, the old and new operation IDs will be displayed.
+  - If the length of the call sequence was changed, the difference in length will be reported (nothing else will be reported in this case).
+
+#### Request
+
+Send a `POST` request to `/explore/random` with  JSON data in the request body following a similar structure to:
+
+```json
+{
+  "name": "random-exploration",
+  "callSequence": [
+    {
+      "path": "/products/{productName}/features",
+      "method": "get"
+    },
+    ...
+  ]
+}
+```
+#### Response
+
+Same as [Exploration](#Exploration/response)
 
 ### Fetch all call sequences for schema
 

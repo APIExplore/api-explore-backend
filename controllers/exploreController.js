@@ -96,14 +96,14 @@ async function sendApiCallToSut (apiCall) {
     const dateAfter = new Date()
 
     console.log(` - Success: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${response.status}`)
-
-    // If the call already has a response, it is used to restore state (no need to record data)
-
+    const size = parseInt(response.headers['content-length'], 10)
     apiCall.date = getTimestamp(dateBefore)
     apiCall.response = {
       status: response.status,
       date: getTimestamp(dateAfter),
-      data: response.data
+      contentType: response.headers['content-type'] ? response.headers['content-type'] : 'none specified',
+      data: response.data,
+      size: size || 0
     }
 
     // Calculate call duration
@@ -121,11 +121,14 @@ async function sendApiCallToSut (apiCall) {
       return null
     }
 
+    const size = parseInt(error.response.headers['content-length'], 10)
     if (error.response) {
       apiCall.response = {
         status: error.response.status,
         date: getTimestamp(dateAfter),
-        data: error.response.data
+        contentType: error.response.headers['content-type'] ? error.response.headers['content-type'] : 'application/octet-stream',
+        data: error.response.data,
+        size: size || 0
       }
       apiCall.duration = dateAfter - dateBefore
     }
@@ -170,6 +173,82 @@ function compareCallSequence (prevCallSequence, curCallSequence) {
   }
 
   return warnings
+}
+
+function analyzeCallSequence (callSequence) {
+  console.log('Analyzing call sequence relationships...')
+  const stateMutations = []
+
+  function assignRelationship (call, relationshipType, value) {
+    call.relationships = call.relationships || {}
+    call.relationships[relationshipType] = call.relationships[relationshipType] || []
+    call.relationships[relationshipType].push(value)
+  }
+
+  for (let i = 0; i < callSequence.length - 1; i++) {
+    const call1 = callSequence[i]
+    const remainingCalls = callSequence.slice(i + 1)
+
+    // Find the second occurrence of the same operation
+    const call2 = remainingCalls.find((call2) => call1.operationId === call2.operationId)
+
+    if (call2) {
+      const ind2 = callSequence.map((e) => e.date).indexOf(call2.date)
+
+      const res1 = { status: call1.response.status, data: call1.response.data }
+      const res2 = { status: call2.response.status, data: call2.response.data }
+
+      if (call1.method === 'get') {
+        if (jsonEqual(res1, res2)) {
+          assignRelationship(call1, 'responseEquality', 'start')
+          assignRelationship(call2, 'responseEquality', 'end')
+          console.log(` - Found response equality between #${i + 1} ${call1.operationId} and #${ind2 + 1} ${call2.operationId}`)
+        } else {
+          assignRelationship(call1, 'responseInequality', 'start')
+          assignRelationship(call2, 'responseInequality', 'end')
+          console.log(` - Found response inequality between #${i + 1} ${call1.operationId} and #${ind2 + 1} ${call2.operationId}`)
+
+          assignRelationship(call1, 'stateMutation', 'start')
+          assignRelationship(call2, 'stateMutation', 'end')
+          console.log(` - Found state mutation between #${i + 1} ${call1.operationId} and #${ind2 + 1} ${call2.operationId}`)
+
+          stateMutations.push({ start: call1, end: call2, ind1: i, ind2 })
+        }
+      } else {
+        if (jsonEqual(res1, res2)) {
+          assignRelationship(call1, 'responseEquality', 'start')
+          assignRelationship(call2, 'responseEquality', 'end')
+          console.log(` - Found response equality between #${i + 1} ${call1.operationId} and #${ind2 + 1} ${call2.operationId}`)
+        } else {
+          assignRelationship(call1, 'responseInequality', 'start')
+          assignRelationship(call2, 'responseInequality', 'end')
+          console.log(` - Found response inequality between #${i + 1} ${call1.operationId} and #${ind2 + 1} ${call2.operationId}`)
+        }
+      }
+    }
+
+    if (parseInt(call1.response.status) >= 500) {
+      assignRelationship(call1, 'fuzz', 'end')
+      console.log(` - Found fuzz in #${i} ${call1.operationId}`)
+    }
+  }
+
+  for (let i = 0; i < stateMutations.length - 1; i++) {
+    const mut1 = stateMutations[i]
+    const mut2 = stateMutations[i + 1]
+
+    const res1 = { status: mut1.start.response.status, data: mut1.start.response.data }
+    const res2 = { status: mut2.end.response.status, data: mut2.end.response.data }
+
+    if (jsonEqual(res1, res2)) {
+      assignRelationship(callSequence[mut1.ind1], 'stateIdentity', 'start')
+      assignRelationship(callSequence[mut1.ind2], 'stateIdentity', 'mid')
+      assignRelationship(callSequence[mut2.ind2], 'stateIdentity', 'end')
+      console.log(` - Found state identity between #${mut1.ind1 + 1} ${mut1.start.operationId}, #${mut1.ind2 + 1} ${mut1.end.operationId} and #${mut2.ind2 + 1} ${mut2.end.operationId}`)
+    }
+  }
+
+  return callSequence
 }
 
 // Helper functions
@@ -275,4 +354,11 @@ function getTimestamp (date) {
   return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}:${milliseconds}`
 }
 
-module.exports = { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket, compareCallSequence }
+module.exports = {
+  buildApiCalls,
+  buildApiCallsRandParams,
+  sendApiCallToSut,
+  sendApiCallOverSocket,
+  compareCallSequence,
+  analyzeCallSequence
+}

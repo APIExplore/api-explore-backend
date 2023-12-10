@@ -7,7 +7,7 @@ const router = express.Router()
 const { v4: generateId } = require('uuid')
 
 const validateCallSequence = require('../utils/validators/callSequenceValidator')
-const { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket, compareCallSequence } = require('../controllers/exploreController')
+const { buildApiCalls, buildApiCallsRandParams, sendApiCallToSut, sendApiCallOverSocket, compareCallSequence, analyzeCallSequence } = require('../controllers/exploreController')
 const db = require('../firebase/data')
 const { schemaInfo } = require('../routes/apiSchema')
 
@@ -37,15 +37,41 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
     return res.status(400).json({ error: 'Error building API calls (make sure that the correct schema is set)' })
   }
 
+  let successfulCalls = 0
+  let unsuccessfulCalls = 0
+  let totDuration = 0
+  let totSize = 0
+
   // Send calls to SUT
   const responseObj = { callSequence: [] }
   for (const apiCall of apiCalls) {
-    const response = await sendApiCallToSut(apiCall)
-    if (!response) {
+    const callData = await sendApiCallToSut(apiCall)
+
+    if (!callData) {
       return res.status(500).json({ error: 'Cannot connect to the SUT, ensure the correct SUT is running and that the correct schema is used' })
     }
-    sendApiCallOverSocket(response)
-    responseObj.callSequence.push(response)
+
+    if (callData.response.status >= 400) {
+      unsuccessfulCalls++
+    } else {
+      successfulCalls++
+    }
+
+    totDuration += callData.duration
+    totSize += callData.response.size
+
+    sendApiCallOverSocket(callData)
+    responseObj.callSequence.push(callData)
+  }
+
+  responseObj.metrics = {
+    numCalls: responseObj.callSequence.length,
+    successfulCalls,
+    unsuccessfulCalls,
+    totDuration,
+    avgDuration: totDuration / responseObj.callSequence.length,
+    totSize,
+    avgSize: totSize / responseObj.callSequence.length
   }
 
   // Check if sequence name exists in DB for current schema
@@ -85,6 +111,9 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
       console.log(' - No changes detected')
     }
   }
+
+  // Look for relationships
+  responseObj.callSequence = analyzeCallSequence(responseObj.callSequence)
 
   db.uploadApiCallSequence(db.collections.apiCalls, sequenceId, responseObj.callSequence)
 
