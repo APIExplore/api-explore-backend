@@ -91,7 +91,7 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
     }
     console.log(` - Sequence name '${sequenceName}' already exists in DB for schema '${schemaInfo.name}'`)
 
-    // Save a snapshot of the previous calls for later comparision
+    // Save a snapshot of the previous calls for later comparison
     prevCalls = await db.getApiCallsBySequenceId(sequenceId)
 
     // Delete previous calls from DB
@@ -105,7 +105,9 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
   }
 
   // If the sequence has previous call data, compare and report changes.
-  if (prevCalls) {
+  if (req.body.callByCall) {
+    if (callByCall) responseObj.callSequence = [...prevCalls, ...responseObj.callSequence];
+
     responseObj.warnings = compareCallSequence(prevCalls, responseObj.callSequence)
     if (responseObj.warnings.length === 0) {
       console.log(' - No changes detected')
