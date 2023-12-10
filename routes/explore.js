@@ -106,7 +106,7 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
 
   // If the sequence has previous call data, compare and report changes.
   if (req.body.callByCall) {
-    if (callByCall) responseObj.callSequence = [...prevCalls, ...responseObj.callSequence];
+    if (prevCalls) responseObj.callSequence = [...prevCalls, ...responseObj.callSequence]
 
     responseObj.warnings = compareCallSequence(prevCalls, responseObj.callSequence)
     if (responseObj.warnings.length === 0) {

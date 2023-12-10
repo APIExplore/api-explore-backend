@@ -51,8 +51,6 @@ async function addApiCallSequence (apiSchemaId, sequenceId, sequenceName) {
       apiSchemaId,
       name: sequenceName,
       favorite: false
-      name: sequenceName,
-      favorite: false
     })
 
     console.log('API Call Sequence added or updated to Firestore with ID:', sequenceId)
@@ -455,93 +453,92 @@ async function renameApiSchema (schemaId, newName) {
 }
 
 // Function to delete a specific API call/schema/sequence, the inputs are the API call/schema/sequence name and the record ID
-async function deleteBySequenceId(collectionName, documentId) {
-  const collectionRef = db.collection(collectionName);
+async function deleteBySequenceId (collectionName, documentId) {
+  const collectionRef = db.collection(collectionName)
 
   try {
-    const docRef = collectionRef.doc(documentId);
-    const docSnapshot = await docRef.get();
+    const docRef = collectionRef.doc(documentId)
+    const docSnapshot = await docRef.get()
 
     if (docSnapshot.exists) {
-      await docRef.delete();
-      console.log(`Document deleted from Firestore. Collection: ${collectionName}, Document ID: ${documentId}`);
+      await docRef.delete()
+      console.log(`Document deleted from Firestore. Collection: ${collectionName}, Document ID: ${documentId}`)
     } else {
-      console.log(`Document does not exist or not found. Collection: ${collectionName}, Document ID: ${documentId}`);
+      console.log(`Document does not exist or not found. Collection: ${collectionName}, Document ID: ${documentId}`)
     }
   } catch (error) {
-    console.error(`Error deleting document from Firestore. Collection: ${collectionName}, Document ID: ${documentId}`, error);
+    console.error(`Error deleting document from Firestore. Collection: ${collectionName}, Document ID: ${documentId}`, error)
   }
 }
 
 // Function to delete API call/schema/sequence and all the related records
-async function deleteBySchema(collectionName) {
-  const collectionRef = db.collection(collectionName);
+async function deleteBySchema (collectionName) {
+  const collectionRef = db.collection(collectionName)
   try {
+    const querySnapshot = await collectionRef.get()
 
-    const querySnapshot = await collectionRef.get();
-
-    const batch = db.batch();
+    const batch = db.batch()
     querySnapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
-    console.log(`Documents deleted from Firestore collection: ${collectionName}`);
+      batch.delete(doc.ref)
+    })
+    await batch.commit()
+    console.log(`Documents deleted from Firestore collection: ${collectionName}`)
     await collectionRef.get().then(snapshot => {
       if (snapshot.size > 0) {
-        console.log(`Error: Documents still exist in collection: ${collectionName}`);
+        console.log(`Error: Documents still exist in collection: ${collectionName}`)
       } else {
-        console.log(`Collection does not contain any documents. Deleting collection: ${collectionName}`);
-        collectionRef.delete();
-        console.log(`Collection deleted from Firestore: ${collectionName}`);
+        console.log(`Collection does not contain any documents. Deleting collection: ${collectionName}`)
+        collectionRef.delete()
+        console.log(`Collection deleted from Firestore: ${collectionName}`)
       }
-    });
+    })
   } catch (error) {
-    console.error(`Error deleting collection from Firestore: ${collectionName}`, error);
+    console.error(`Error deleting collection from Firestore: ${collectionName}`, error)
   }
 }
 
 // Function to delete a sequence and its associated calls
-async function deleteSequenceAndCalls(sequenceId,apiSequence, apiCall) {
-  const sequenceRef = db.collection(apiSequence).doc(sequenceId);
-  const callsRef = db.collection(apiCall);
-  
+async function deleteSequenceAndCalls (sequenceId, apiSequence, apiCall) {
+  const sequenceRef = db.collection(apiSequence).doc(sequenceId)
+  const callsRef = db.collection(apiCall)
+
   try {
     // Delete the sequence
-    await sequenceRef.delete();
-    console.log(`Sequence deleted: ${sequenceId}`);
+    await sequenceRef.delete()
+    console.log(`Sequence deleted: ${sequenceId}`)
     // Delete associated calls
-    const callsQuerySnapshot = await callsRef.where('sequenceId', '==', sequenceId).get();
-    const batch = db.batch();
+    const callsQuerySnapshot = await callsRef.where('sequenceId', '==', sequenceId).get()
+    const batch = db.batch()
     callsQuerySnapshot.forEach((callDoc) => {
-      batch.delete(callDoc.ref);
-    });
-    await batch.commit();
-    console.log(`Associated calls deleted for sequence: ${sequenceId}`);
+      batch.delete(callDoc.ref)
+    })
+    await batch.commit()
+    console.log(`Associated calls deleted for sequence: ${sequenceId}`)
   } catch (error) {
-    console.error(`Error deleting sequence and associated calls: ${sequenceId}`, error);
+    console.error(`Error deleting sequence and associated calls: ${sequenceId}`, error)
   }
 }
 
 // Function to edit the name of a Firestore collection
-async function editCollectionName(oldCollectionName, newCollectionName) {
-  const oldCollectionRef = db.collection(oldCollectionName);
+async function editCollectionName (oldCollectionName, newCollectionName) {
+  const oldCollectionRef = db.collection(oldCollectionName)
 
   try {
-    const snapshot = await oldCollectionRef.get();
-    const newCollectionRef = db.collection(newCollectionName);
+    const snapshot = await oldCollectionRef.get()
+    const newCollectionRef = db.collection(newCollectionName)
 
     snapshot.forEach(async (doc) => {
-      await newCollectionRef.doc(doc.id).set(doc.data());
-      await doc.ref.delete();
-    });
+      await newCollectionRef.doc(doc.id).set(doc.data())
+      await doc.ref.delete()
+    })
 
-    console.log(`Collection name updated: ${oldCollectionName} -> ${newCollectionName}`);
+    console.log(`Collection name updated: ${oldCollectionName} -> ${newCollectionName}`)
   } catch (error) {
-    console.error(`Error updating collection name: ${error}`);
+    console.error(`Error updating collection name: ${error}`)
   }
 }
 
-/*// Function to edit the name of a Firestore document within a collection
+/* // Function to edit the name of a Firestore document within a collection
 async function editDocumentName(collectionName, oldDocumentName, newDocumentName) {
   const collectionRef = db.collection(collectionName);
 
@@ -557,7 +554,7 @@ async function editDocumentName(collectionName, oldDocumentName, newDocumentName
   } catch (error) {
     console.error(`Error updating document name: ${error}`);
   }
-}*/
+} */
 
 // Print progress bar when uploading API calls to DB
 function printProgressBar (total, count) {
@@ -631,7 +628,6 @@ module.exports = {
   deleteSequenceAndCalls,
   editCollectionName,
   deleteBySequenceId,
-  deleteApiCallsBySequenceId,
   getApiSequenceByName,
   updateApiSequenceFavorite,
   getSequenceId,
