@@ -104,13 +104,17 @@ async function exploreApiCallSequence (req, res, buildApiCallsFn) {
     console.log('Resuming exploration...')
   }
 
-  // If the sequence has previous call data, compare and report changes.
-  if (req.body.callByCall) {
-    if (prevCalls) responseObj.callSequence = [...prevCalls, ...responseObj.callSequence]
+  const callByCall = req.body.callByCall
 
-    responseObj.warnings = compareCallSequence(prevCalls, responseObj.callSequence)
-    if (responseObj.warnings.length === 0) {
-      console.log(' - No changes detected')
+  // If the sequence has previous call data, compare and report changes.
+  if (prevCalls) {
+    if (callByCall) {
+      responseObj.callSequence = [...prevCalls, ...responseObj.callSequence]
+    } else {
+      responseObj.warnings = compareCallSequence(prevCalls, responseObj.callSequence)
+      if (responseObj.warnings.length === 0) {
+        console.log(' - No changes detected')
+      }
     }
   }
 
