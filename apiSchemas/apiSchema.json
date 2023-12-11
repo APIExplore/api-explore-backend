@@ -29,6 +29,39 @@
         ]
       }
     },
+    "/products/{productName}/constraints/requires": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "addRequiresConstraintToProduct",
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "productName",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "formData",
+            "name": "sourceFeature",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "formData",
+            "name": "requiredFeature",
+            "type": "string",
+            "required": false
+          }
+        ]
+      }
+    },
     "/products/{productName}/configurations/{configurationName}": {
       "post": {
         "produces": [
@@ -106,39 +139,6 @@
             "name": "configurationName",
             "type": "string",
             "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/constraints/requires": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addRequiresConstraintToProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "sourceFeature",
-            "type": "string",
-            "required": false
-          },
-          {
-            "in": "formData",
-            "name": "requiredFeature",
-            "type": "string",
-            "required": false
           }
         ]
       }
@@ -611,10 +611,10 @@
     "ProductsConfigurationResource": {
       "type": "object"
     },
-    "ProductsConfigurationFeaturesResource": {
+    "ProductsFeaturesResource": {
       "type": "object"
     },
-    "ProductsFeaturesResource": {
+    "ProductsConfigurationFeaturesResource": {
       "type": "object"
     },
     "Feature": {
