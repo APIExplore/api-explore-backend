@@ -50,7 +50,7 @@ async function addApiCallSequence (apiSchemaId, sequenceId, sequenceName) {
     await docRef.set({
       apiSchemaId,
       name: sequenceName,
-      favorite: false
+      favorite: docRef.get().favorite || false
     })
 
     console.log('API Call Sequence added or updated to Firestore with ID:', sequenceId)
