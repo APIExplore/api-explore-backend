@@ -106,8 +106,7 @@ async function setApiSchema (req, res, next, isUpload) {
       console.log(` - API schema saved to '${filePath}'`)
 
       apiSchema = readApiSchema(filePath)
-
-      if (!apiSchema) {
+      if (!apiSchema.paths) {
         return res.status(400).json({ error: 'Failed to read API schema, ensure correct JSON structure in the provided file' })
       }
 
