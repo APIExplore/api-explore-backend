@@ -15,31 +15,33 @@ function buildApiCallsCommon (callSequence, useRandomParams) {
   const apiSchema = readApiSchema()
 
   try {
-    const basePath = apiSchema.basePath.endsWith('/')
-      ? apiSchema.basePath.slice(0, -1)
-      : apiSchema.basePath
+    let address = 'http://localhost:8080' // Default to localhost:8080 unless schema contains other info (should be configurable in UI)
+    if (apiSchema.basePath) {
+      const basePath = apiSchema.basePath.endsWith('/')
+        ? apiSchema.basePath.slice(0, -1)
+        : apiSchema.basePath
 
-    const address = apiSchema.schemes[0] + '://' + apiSchema.host + basePath
+      address = apiSchema.schemes[0] + '://' + apiSchema.host + basePath
+    } else if (apiSchema.servers) {
+      const url = apiSchema.servers[0].url
+      address += url
+    }
 
     for (const call of callSequence) {
       const path = call.path
       const method = call.method
       const operation = apiSchema.paths[path][method]
       if (operation) {
-        let params = []
-        if (operation.parameters) {
-          if (useRandomParams) {
-            params = operation.parameters.map((param) => ({
-              type: param.type,
-              in: param.in,
-              name: param.name,
-              value: param.enum
-                ? pickRandomValueFromEnum(param.enum)
-                : generateRandomValue(param.type)
-            }))
-          } else {
-            params = call.params
-          }
+        let params = call.params || []
+        if (operation.parameters && useRandomParams) {
+          params = operation.parameters.map((param) => ({
+            type: param.type,
+            in: param.in,
+            name: param.name,
+            value: param.enum
+              ? pickRandomValueFromEnum(param.enum)
+              : generateRandomValue(param.type)
+          }))
         }
 
         apiCalls.push({
@@ -55,7 +57,7 @@ function buildApiCallsCommon (callSequence, useRandomParams) {
 
     return apiCalls
   } catch (error) {
-    console.error(' - Error building API calls (make sure that the correct schema is set): ', error.message)
+    console.error(' - Error building API calls (make sure that the correct schema is set): ', error)
     return null
   }
 }
@@ -80,10 +82,19 @@ async function sendApiCallToSut (apiCall) {
       url: apiCall.url
     }
 
-    const { formData } = apiCall.requestBody
+    const { requestBody, formData } = apiCall.requestBody
 
-    // Check if the API call contains formData
-    if (Object.keys(formData).length > 0) {
+    if (Object.keys(requestBody).length > 0) {
+      console.log(requestBody)
+
+      const apiSchema = readApiSchema()
+      const pathSchema = apiSchema ? getObjectSchema(apiSchema.paths[apiCall.endpoint][apiCall.method], apiSchema) : null
+      const parsedRequestBody = pathSchema ? parseRequestBody(requestBody, pathSchema) : requestBody
+      axiosConfig.data = JSON.stringify(parsedRequestBody)
+      axiosConfig.headers = {
+        'Content-Type': 'application/json'
+      }
+    } else if (Object.keys(formData).length > 0) {
       axiosConfig.data = querystring.stringify(formData)
       axiosConfig.headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -117,7 +128,7 @@ async function sendApiCallToSut (apiCall) {
     try {
       console.error(` - Failure: ${apiCall.operationId} ${apiCall.method} '${apiCall.url}' ${error.response.status}`)
     } catch (error) {
-      console.error(' - Error: Cannot connect to the SUT, ensure the correct SUT is running')
+      console.error(' - Error: Failed to connect to the SUT', error.message)
       return null
     }
 
@@ -277,11 +288,15 @@ function assignPathParameters (path, parameters) {
 
 function assignRequestBodyParameters (parameters) {
   const formDataParams = {}
+  const requestBodyParams = {}
 
   for (const param of parameters) {
     switch (param.in) {
       case 'formData':
-        formDataParams[param.name] = param.value
+        formDataParams[param.name] = parseParamValue(param)
+        break
+      case 'body':
+        requestBodyParams[param.name] = parseParamValue(param)
         break
       default:
         break
@@ -289,8 +304,17 @@ function assignRequestBodyParameters (parameters) {
   }
 
   return {
+    requestBody: requestBodyParams,
     formData: formDataParams
   }
+}
+
+function parseParamValue (param) {
+  if (param.type === 'integer') {
+    return parseInt(param.value)
+  }
+
+  return param.value
 }
 
 function generateRandomValue (type) {
@@ -308,6 +332,66 @@ function generateRandomValue (type) {
 
 function pickRandomValueFromEnum (enumValues) {
   return enumValues[Math.floor(Math.random() * enumValues.length)]
+}
+
+// Rebuild body parameters into correct request body structure
+function parseRequestBody (requestBody, schema) {
+  const parsedRequestBody = {}
+
+  const processParam = (paramName, paramValue) => {
+    const paramNameParts = paramName.split(' ')
+    const actualParamName = paramNameParts.pop()
+    let currentObject = parsedRequestBody
+
+    // Iterate through paramNameParts to create nested objects
+    for (const part of paramNameParts) {
+      if (!currentObject[part]) {
+        currentObject[part] = {}
+      }
+      currentObject = currentObject[part]
+    }
+
+    // Add the parameter to the currentObject
+    currentObject[actualParamName] = paramValue
+  }
+
+  for (const [paramName, paramValue] of Object.entries(requestBody)) {
+    processParam(paramName, paramValue)
+  }
+
+  // Check if response body objects should be array or not
+  const result = {}
+  for (const [paramName, paramValue] of Object.entries(parsedRequestBody)) {
+    const paramSchema = schema.properties && schema.properties[paramName]
+    if (paramSchema.type === 'array') {
+      result[paramName] = [paramValue]
+    } else {
+      result[paramName] = paramValue
+    }
+  }
+
+  return result
+}
+
+// Get the schema for a operation request body object
+function getObjectSchema (apiPath, apiSchema) {
+  if (apiPath && apiPath.requestBody && apiPath.requestBody.content) {
+    const contentType = Object.keys(apiPath.requestBody.content)[0]
+    const schemaRef = apiPath.requestBody.content[contentType].schema.$ref
+
+    if (!schemaRef) {
+      return null
+    }
+
+    const schemaPath = schemaRef.split('/')
+    const schemaKey = schemaPath[schemaPath.length - 1]
+
+    if (apiSchema.components && apiSchema.components.schemas && apiSchema.components.schemas[schemaKey]) {
+      return apiSchema.components.schemas[schemaKey]
+    }
+  }
+
+  return null
 }
 
 function jsonEqual (a, b) {
@@ -351,7 +435,7 @@ function getTimestamp (date) {
   const seconds = date.getSeconds()
   const milliseconds = date.getMilliseconds()
 
-  return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}:${milliseconds}`
+  return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}.${milliseconds}`
 }
 
 module.exports = {

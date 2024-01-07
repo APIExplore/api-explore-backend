@@ -2,7 +2,7 @@ const { v4: generateId } = require('uuid')
 
 const { db } = require('../firebase/config')
 
-const collections = { apiSchemas: 'test_api_schemas', apiCallSequences: 'test_api_call_sequences', apiCalls: 'test_api_calls' }
+const collections = { apiSchemas: 'api_schemas', apiCallSequences: 'api_call_sequences', apiCalls: 'api_calls' }
 
 // Function to create a Firestore collection (in our case: api_calls, api_sequences or api_schemas collections)
 async function createCollection (collectionName) {

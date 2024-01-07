@@ -1,643 +1,522 @@
 {
-  "basePath": "/",
-  "paths": {
-    "/products/{productName}/constraints/{constraintId}": {
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteConstraint",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "constraintId",
-            "format": "int64",
-            "type": "integer",
-            "required": true
-          }
-        ]
+  "components": {
+    "examples": {
+      "ResetCursor": {
+        "summary": "Used for reseting the cursor",
+        "value": {
+          "start_time": "2021-06-11T16:32:50-03:00",
+          "limit": 100
+        }
+      },
+      "Cursor": {
+        "summary": "Used for continued calling with a cursor",
+        "value": {
+          "cursor": "aGVsbG8hIGlzIGl0IG1lIHlvdSBhcmUgbG9va2luZyBmb3IK"
+        }
       }
     },
-    "/products/{productName}/constraints/requires": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addRequiresConstraintToProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
+    "schemas": {
+      "Action": {},
+      "SignInAttempt": {
+        "description": "A single sign-in attempt object",
+        "properties": {
+          "country": {
+            "description": "Country ISO Code",
             "type": "string",
-            "required": true
+            "example": "France"
           },
-          {
-            "in": "formData",
-            "name": "sourceFeature",
-            "type": "string",
-            "required": false
+          "client": {
+            "$ref": "#/components/schemas/Client"
           },
-          {
-            "in": "formData",
-            "name": "requiredFeature",
-            "type": "string",
-            "required": false
-          }
-        ]
-      }
-    },
-    "/products/{productName}/configurations/{configurationName}": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addConfiguration",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
+          "target_user": {
+            "$ref": "#/components/schemas/User"
           },
-          {
-            "in": "path",
-            "name": "configurationName",
+          "details": {
+            "$ref": "#/components/schemas/Details"
+          },
+          "category": {
             "type": "string",
-            "required": true
+            "enum": [
+              "success",
+              "credentials_failed",
+              "mfa_failed",
+              "modern_version_failed",
+              "firewall_failed",
+              "firewall_reported_success"
+            ],
+            "example": "firewall_failed"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "credentials_ok",
+              "mfa_ok",
+              "password_secret_bad",
+              "mfa_missing",
+              "totp_disabled",
+              "totp_bad",
+              "totp_timeout",
+              "u2f_disabled",
+              "u2f_bad",
+              "u2f_timout",
+              "duo_disabled",
+              "duo_bad",
+              "duo_timeout",
+              "duo_native_bad",
+              "platform_secret_disabled",
+              "platform_secret_bad",
+              "platform_secret_proxy",
+              "code_disabled",
+              "code_bad",
+              "code_timeout",
+              "ip_blocked",
+              "continent_blocked",
+              "country_blocked",
+              "anonymous_blocked",
+              "all_blocked",
+              "modern_version_missing",
+              "modern_version_old"
+            ],
+            "example": "continent_blocked"
+          },
+          "session_uuid": {
+            "$ref": "#/components/schemas/UUID"
+          },
+          "uuid": {
+            "$ref": "#/components/schemas/UUID"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/DateTimeRFC3339"
           }
-        ]
+        }
       },
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getConfigurationWithNameForProduct",
-        "responses": {
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ProductConfiguration"
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
+      "User": {
+        "description": "User object",
+        "properties": {
+          "name": {
+            "description": "Full name",
             "type": "string",
-            "required": true
+            "example": "Jack O'Neill"
           },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteConfiguration",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
+          "uuid": {
+            "$ref": "#/components/schemas/UUID"
           },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
+          "email": {
+            "format": "email",
+            "type": "string"
           }
-        ]
-      }
-    },
-    "/products/{productName}": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
+        }
       },
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getProductByName",
-        "responses": {
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Product"
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteProductByName",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/configurations/{configurationName}/features": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getConfigurationActivedFeatures",
-        "responses": {
-          "200": {
-            "schema": {
-              "type": "array",
-              "items": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "Error": {
+            "type": "object",
+            "properties": {
+              "Message": {
+                "description": "The error message.",
                 "type": "string"
               }
-            },
-            "headers": {},
-            "description": "successful operation"
+            }
           }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/features": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getFeaturesForProduct",
-        "responses": {
-          "200": {
-            "schema": {
-              "uniqueItems": true,
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Feature"
-              }
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/configurations": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getConfigurationsForProduct",
-        "responses": {
-          "200": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "headers": {},
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/configurations/{configurationName}/features/{featureName}": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addFeatureToConfiguration",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          }
-        ]
+        }
       },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteFeature",
-        "responses": {
-          "default": {
-            "description": "successful operation"
+      "ItemUsage": {
+        "description": "A single item usage object",
+        "properties": {
+          "used_version": {
+            "type": "integer"
+          },
+          "item_uuid": {
+            "$ref": "#/components/schemas/UUID"
+          },
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "client": {
+            "$ref": "#/components/schemas/Client"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "uuid": {
+            "$ref": "#/components/schemas/UUID"
+          },
+          "vault_uuid": {
+            "$ref": "#/components/schemas/UUID"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/DateTimeRFC3339"
           }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "configurationName",
-            "type": "string",
-            "required": true
-          }
-        ]
-      }
-    },
-    "/products/{productName}/features/{featureName}": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addFeatureToProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "description",
-            "type": "string",
-            "required": false
-          }
-        ]
+        }
       },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "deleteFeatureOfProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
+      "Cursor": {
+        "description": "Cursor",
+        "properties": {
+          "cursor": {
+            "description": "Cursor to fetch more data if available or continue the polling process if required",
             "type": "string",
-            "required": true
-          },
-          {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
+            "example": "aGVsbG8hIGlzIGl0IG1lIHlvdSBhcmUgbG9va2luZyBmb3IK"
           }
-        ]
+        }
       },
-      "put": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "updateFeatureOfProduct",
-        "responses": {
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Feature"
+      "Introspection": {
+        "type": "object",
+        "properties": {
+          "IssuedAt": {
+            "$ref": "#/components/schemas/DateTimeRFC3339"
+          },
+          "Features": {
+            "type": "array",
+            "items": {
+              "type": "string"
             },
-            "headers": {},
-            "description": "successful operation"
+            "example": [
+              "itemusages",
+              "signinattempts"
+            ]
+          },
+          "UUID": {
+            "type": "string"
           }
-        },
-        "parameters": [
+        }
+      },
+      "CursorCollection": {
+        "allOf": [
           {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
+            "$ref": "#/components/schemas/Cursor"
           },
           {
-            "in": "path",
-            "name": "featureName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "description",
-            "type": "string",
-            "required": false
-          }
-        ]
-      }
-    },
-    "/products/{productName}/constraints/excludes": {
-      "post": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "addExcludesConstraintToProduct",
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        },
-        "parameters": [
-          {
-            "in": "path",
-            "name": "productName",
-            "type": "string",
-            "required": true
-          },
-          {
-            "in": "formData",
-            "name": "sourceFeature",
-            "type": "string",
-            "required": false
-          },
-          {
-            "in": "formData",
-            "name": "excludedFeature",
-            "type": "string",
-            "required": false
-          }
-        ]
-      }
-    },
-    "/products": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "getAllProducts",
-        "responses": {
-          "200": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
+            "properties": {
+              "has_more": {
+                "description": "Whether there may still be more data to fetch using the returned cursor. If true, the subsequent request could still be empty.",
+                "type": "boolean"
               }
-            },
-            "headers": {},
-            "description": "successful operation"
+            }
           }
-        },
-        "parameters": []
+        ],
+        "description": "Common cursor properties for collection responses"
+      },
+      "ItemUsageItems": {
+        "allOf": [
+          {
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ItemUsage"
+                }
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/CursorCollection"
+          }
+        ],
+        "description": "An object wrapping cursor properties and a list of items usages"
+      },
+      "SignInAttemptItems": {
+        "allOf": [
+          {
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/SignInAttempt"
+                }
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/CursorCollection"
+          }
+        ],
+        "description": "An object wrapping cursor properties and a list of sign-in attempts"
+      },
+      "Details": {
+        "description": "Additional information about the sign-in attempt",
+        "properties": {
+          "value": {
+            "description": "For firewall prevented sign-ins, the value is the chosen continent, country, etc. that blocked the sign-in attempt",
+            "type": "string",
+            "example": "Europe"
+          }
+        }
+      },
+      "ResetCursor": {
+        "description": "Reset cursor",
+        "properties": {
+          "start_time": {
+            "$ref": "#/components/schemas/DateTimeRFC3339"
+          },
+          "end_time": {
+            "$ref": "#/components/schemas/DateTimeRFC3339"
+          },
+          "limit": {
+            "maximum": 1000,
+            "type": "number",
+            "minimum": 1
+          }
+        }
+      },
+      "Client": {
+        "description": "Metadata gathered about the client",
+        "properties": {
+          "app_name": {
+            "type": "string",
+            "example": "1Password Extension"
+          },
+          "app_version": {
+            "type": "string",
+            "example": "20127"
+          },
+          "platform_version": {
+            "description": "Depending on the platform used, this can be the version of the browser that the client extension is installed, the model of computer that the native application is installed or the machine's CPU version that the CLI was installed",
+            "type": "string"
+          },
+          "os_version": {
+            "type": "string",
+            "example": "10.15.6"
+          },
+          "platform_name": {
+            "type": "string",
+            "example": "Chrome"
+          },
+          "os_name": {
+            "type": "string",
+            "example": "MacOSX"
+          },
+          "ip_address": {
+            "type": "string",
+            "example": "13.227.95.22"
+          }
+        }
+      },
+      "UUID": {
+        "type": "string",
+        "example": "56YE2TYN2VFYRLNSHKPW5NVT5E"
+      },
+      "DateTimeRFC3339": {
+        "format": "date-time",
+        "type": "string",
+        "example": "2020-06-11T16:32:50-03:00"
+      }
+    },
+    "requestBodies": {
+      "CursorRequest": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/Cursor"
+                },
+                {
+                  "$ref": "#/components/schemas/ResetCursor"
+                }
+              ]
+            },
+            "examples": {
+              "Continuing cursor": {
+                "$ref": "#/components/examples/Cursor"
+              },
+              "Resetting cursor": {
+                "$ref": "#/components/examples/ResetCursor"
+              }
+            }
+          }
+        }
+      },
+      "ItemUsagesRequest": {
+        "$ref": "#/components/requestBodies/CursorRequest"
+      },
+      "SignInAttemptsRequest": {
+        "$ref": "#/components/requestBodies/CursorRequest"
+      }
+    },
+    "responses": {
+      "ItemUsagesResponse": {
+        "description": "Item usages response object",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ItemUsageItems"
+            }
+          }
+        }
+      },
+      "IntrospectResponse": {
+        "description": "Introspection object",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Introspection"
+            }
+          }
+        }
+      },
+      "SignInAttemptsResponse": {
+        "description": "Sign-in attempts response object",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SignInAttemptItems"
+            }
+          }
+        }
+      },
+      "UnauthorizedErrorResponse": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "GenericErrorResponse": {
+        "description": "Generic error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "jwtsa": {
+        "bearerFormat": "JWT-SA",
+        "scheme": "bearer",
+        "description": "A JWT SA token issued to this service",
+        "type": "http"
       }
     }
   },
-  "host": "localhost:8080",
-  "schemes": [
-    "http"
+  "servers": [
+    {
+      "description": "1Password",
+      "url": "https://events.1password.com"
+    },
+    {
+      "description": "1Password CA",
+      "url": "https://events.1password.ca"
+    },
+    {
+      "description": "1Password EU",
+      "url": "https://events.1password.eu"
+    },
+    {
+      "description": "1Password Enterprise",
+      "url": "https://events.ent.1password.com"
+    }
   ],
-  "definitions": {
-    "FeatureConstraint": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "format": "int64",
-          "type": "integer"
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/signinattempts": {
+      "post": {
+        "summary": "Retrieves sign-in attempts",
+        "security": [
+          {
+            "jwtsa": []
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/SignInAttemptsRequest"
         },
-        "type": {
-          "type": "string"
-        }
-      }
-    },
-    "ProductConfiguration": {
-      "type": "object",
-      "properties": {
-        "valid": {
-          "type": "boolean"
-        },
-        "activedFeatures": {
-          "uniqueItems": true,
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Feature"
+        "description": "This endpoint requires your JSON Web Token to have the *signinattempts* feature.",
+        "operationId": "getSignInAttempts",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/SignInAttemptsResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/GenericErrorResponse"
           }
         },
-        "name": {
-          "type": "string"
-        }
+        "tags": [
+          "api-v1"
+        ]
       }
     },
-    "Product": {
-      "type": "object",
-      "properties": {
-        "features": {
-          "uniqueItems": true,
-          "readOnly": true,
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Feature"
+    "/api/auth/introspect": {
+      "get": {
+        "summary": "Performs introspection of the provided Bearer JWT token",
+        "security": [
+          {
+            "jwtsa": []
+          }
+        ],
+        "operationId": "getAuthIntrospect",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/IntrospectResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/GenericErrorResponse"
           }
         },
-        "name": {
-          "type": "string"
-        },
-        "id": {
-          "format": "int64",
-          "type": "integer"
-        },
-        "constraints": {
-          "uniqueItems": true,
-          "readOnly": true,
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/FeatureConstraint"
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/itemusages": {
+      "post": {
+        "summary": "Retrieves item usages",
+        "security": [
+          {
+            "jwtsa": []
           }
-        }
-      }
-    },
-    "ProductsConfigurationResource": {
-      "type": "object"
-    },
-    "ProductsFeaturesResource": {
-      "type": "object"
-    },
-    "ProductsConfigurationFeaturesResource": {
-      "type": "object"
-    },
-    "Feature": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/ItemUsagesRequest"
         },
-        "description": {
-          "type": "string"
+        "description": "This endpoint requires your JSON Web Token to have the *itemusages* feature.",
+        "operationId": "getItemUsages",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ItemUsagesResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/GenericErrorResponse"
+          }
         },
-        "id": {
-          "format": "int64",
-          "type": "integer"
-        }
+        "tags": [
+          "api-v1"
+        ]
       }
-    },
-    "ProductsConstraintsResource": {
-      "type": "object"
     }
   },
-  "swagger": "2.0",
   "info": {
-    "version": "1.0"
+    "x-providerName": "1password.com",
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_upload.wikimedia.org_wikipedia_commons_thumb_e_e3_1password-logo.svg_1280px-1password-logo.svg.png"
+    },
+    "description": "1Password Events API Specification.",
+    "x-apisguru-categories": [
+      "security"
+    ],
+    "x-serviceName": "events",
+    "title": "Events API",
+    "x-origin": [
+      {
+        "format": "openapi",
+        "version": "3.0",
+        "url": "https://i.1password.com/media/1password-events-reporting/1password-events-api.yaml"
+      }
+    ],
+    "version": "1.0.0"
   }
 }

@@ -6,7 +6,7 @@ const express = require('express')
 const router = express.Router()
 const axios = require('axios')
 
-// const validateApiSchema = require('../utils/validators/apiSchemaV2Validator')
+const validateApiSchema = require('../utils/validators/openApiValidator')
 const { readApiSchema, writeApiSchema } = require('../utils/apiSchemaUtils')
 const getSchemaProperties = require('../controllers/apiSchemaController')
 const uploadSchema = require('../middleware/apiSchemaMiddleware.js')
@@ -69,6 +69,12 @@ router.get('/fetch/:schemaName', async function (req, res, next) {
       }
       schemaInfo.name = schemaName
 
+      const { isValid, warnings } = validateApiSchema(apiSchema)
+
+      if (!isValid) {
+        resData.warnings = warnings
+      }
+
       // Send data in response
       console.log(' - Paths, methods and definitions sent in request body')
       res.status(201).json(resData)
@@ -106,8 +112,7 @@ async function setApiSchema (req, res, next, isUpload) {
       console.log(` - API schema saved to '${filePath}'`)
 
       apiSchema = readApiSchema(filePath)
-
-      if (!apiSchema) {
+      if (!apiSchema.paths) {
         return res.status(400).json({ error: 'Failed to read API schema, ensure correct JSON structure in the provided file' })
       }
 
@@ -148,6 +153,12 @@ async function setApiSchema (req, res, next, isUpload) {
 
     schemaInfo.id = await db.getIdByName(db.collections.apiSchemas, schemaName)
     schemaInfo.name = schemaName
+
+    const { isValid, warnings } = validateApiSchema(apiSchema)
+
+    if (!isValid) {
+      resData.warnings = warnings
+    }
 
     console.log(' - Paths, methods and definitions sent in request body')
     return res.status(201).json(resData)

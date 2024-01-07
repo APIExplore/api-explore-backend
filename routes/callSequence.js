@@ -84,7 +84,7 @@ router.put('/toggle-favorite/:sequenceName', async function (req, res, next) {
       return res.status(500).json({ error: `Failed to toggle favorite for sequence '${sequenceName}'` })
     }
 
-    return res.json({ message: `Favorite flag for sequence '${sequenceName}' toggled successfully` })
+    return res.status(201).json({ message: `Favorite flag for sequence '${sequenceName}' toggled successfully` })
   } catch (error) {
     console.error(`Error toggling favorite for sequence '${sequenceName}':`, error)
     return res.status(500).json({ error: `Error toggling favorite for sequence '${sequenceName}'` })
@@ -108,6 +108,10 @@ router.put('/rename/:sequenceName/:newSequenceName', async function (req, res, n
       const sequenceId = await db.getSequenceId(schemaInfo.id, sequenceName)
       if (!sequenceId) {
         return res.status(500).json({ error: `Failed to get ID of sequence '${sequenceName}'` })
+      }
+
+      if (await db.docWithNameAndSchemaIdExists(db.collections.apiCallSequences, schemaInfo.id, newSequenceName)) {
+        return res.status(400).json({ error: `Failed to rename sequence '${sequenceName}' to '${newSequenceName}'. A sequence with the new name already exists.` })
       }
 
       const success = await db.renameCallSequence(sequenceId, newSequenceName)
