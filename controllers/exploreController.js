@@ -435,7 +435,7 @@ function getTimestamp (date) {
   const seconds = date.getSeconds()
   const milliseconds = date.getMilliseconds()
 
-  return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}:${milliseconds}`
+  return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes}:${seconds}.${milliseconds}`
 }
 
 module.exports = {
